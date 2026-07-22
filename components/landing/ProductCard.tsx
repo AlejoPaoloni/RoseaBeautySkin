@@ -22,7 +22,10 @@ export default function ProductCard({
     <motion.article
       layout
       initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      whileInView={{
+        opacity: producto.estado === "Sin stock" ? 0.75 : 1,
+        y: 0,
+      }}
       viewport={{ once: true, margin: "-40px" }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{
@@ -31,7 +34,11 @@ export default function ProductCard({
         damping: 18,
         delay: (index % 4) * 0.06,
       }}
-      className="group overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-rosea-100/60 transition-shadow hover:shadow-xl hover:shadow-rosea-200/40"
+      className={`group overflow-hidden rounded-2xl bg-white shadow-sm ring-1 transition-shadow ${
+        producto.estado === "Sin stock"
+          ? "grayscale ring-neutral-200"
+          : "ring-rosea-100/60 hover:shadow-xl hover:shadow-rosea-200/40"
+      }`}
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-rosea-50">
         {producto.imagen_url && (
@@ -40,9 +47,7 @@ export default function ProductCard({
             alt={producto.nombre}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
-              producto.estado === "Sin stock" ? "opacity-80 saturate-50" : ""
-            }`}
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
           />
         )}
         <span
