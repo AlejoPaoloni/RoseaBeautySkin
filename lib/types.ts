@@ -9,6 +9,7 @@ export interface Producto {
   categoria: Categoria;
   subcategoria: string;
   estado: Estado;
+  precio: number;
   orden_display: number;
   created_at: string;
 }

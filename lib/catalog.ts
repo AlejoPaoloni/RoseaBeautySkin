@@ -39,3 +39,11 @@ export function agruparPorSubcategoria(
   }
   return grupos;
 }
+
+export function formatearPrecio(precio: number): string {
+  return precio.toLocaleString("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    maximumFractionDigits: 0,
+  });
+}
