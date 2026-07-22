@@ -40,9 +40,8 @@ export function agruparPorSubcategoria(
   return grupos;
 }
 
-export function formatearPrecio(precio: number | undefined | null): string {
-  const precioSeguro = precio ?? 0;
-  return precioSeguro.toLocaleString("es-AR", {
+export function formatearPrecio(precio: number): string {
+  return precio.toLocaleString("es-AR", {
     style: "currency",
     currency: "ARS",
     maximumFractionDigits: 0,
