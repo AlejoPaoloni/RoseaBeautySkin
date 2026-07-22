@@ -77,7 +77,7 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
       if (producto) {
         await actualizarProducto(producto.id, datos);
       } else {
-        await crearProducto({ ...datos, orden_display: 999 });
+        await crearProducto({ ...datos, orden_display: 999, destacado: false });
       }
       onSaved();
     } catch {
