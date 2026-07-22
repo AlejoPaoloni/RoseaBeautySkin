@@ -15,6 +15,7 @@ npm run dev
 
 1. Crear proyecto en [supabase.com](https://supabase.com) (free tier).
 2. En **SQL Editor**, correr `supabase/schema.sql` y después `supabase/seed.sql`.
+   - Si las policies de storage fallan con "must be owner of table objects": crear el bucket `productos-img` (público) desde **Storage** y las 4 policies desde **Storage → Policies** en el dashboard (SELECT para todos; INSERT/UPDATE/DELETE solo `authenticated`, todas con condición `bucket_id = 'productos-img'`). El resto del script corre igual.
 3. En **Authentication → Users**, crear el usuario admin (email + password). Desactivar signups en **Authentication → Sign In / Up** si está habilitado.
 4. En **Project Settings → API**, copiar `URL` y `anon public key` a `.env.local`:
 
@@ -27,7 +28,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 
 1. Subir el repo a GitHub.
 2. En [vercel.com](https://vercel.com): **New Project** → importar el repo.
-3. Agregar las dos env vars de arriba.
+3. Agregar las dos env vars de arriba, más `NEXT_PUBLIC_SITE_URL` con la URL final (ej: `https://catalogo-rb.vercel.app`) para que la imagen de preview (og:image) funcione al compartir el link.
 4. Deploy. Cada push a `main` redeploya solo.
 
 ## Personalizar (sin tocar componentes)
