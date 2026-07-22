@@ -53,7 +53,7 @@ export default function CatalogSection({
 
       <motion.div
         layout
-        className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+        className="mt-10 grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-3 lg:grid-cols-4"
       >
         <AnimatePresence mode="popLayout">
           {visibles.map((p, i) => (

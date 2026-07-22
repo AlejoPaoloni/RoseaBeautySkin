@@ -28,7 +28,7 @@ export default function PorEncargoSection({
         <p className="mx-auto mt-3 max-w-xl text-center text-sm text-neutral-500">
           {config.notaPorEncargo}
         </p>
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <div className="mt-10 grid grid-cols-2 gap-3 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
           {items.map((p, i) => (
             <ProductCard key={p.id} producto={p} index={i} />
           ))}

@@ -46,19 +46,19 @@ export default function ProductCard({
           />
         )}
         <span
-          className={`absolute right-3 top-3 rounded-full px-3 py-1 text-xs font-medium ${BADGE[producto.estado]}`}
+          className={`absolute right-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-medium sm:right-3 sm:top-3 sm:px-3 sm:py-1 sm:text-xs ${BADGE[producto.estado]}`}
         >
           {producto.estado}
         </span>
       </div>
-      <div className="p-4">
-        <h3 className="font-serif text-lg text-neutral-900">
+      <div className="p-3 sm:p-4">
+        <h3 className="font-serif text-base text-neutral-900 sm:text-lg">
           {producto.nombre}
         </h3>
-        <p className="mt-1 text-sm leading-relaxed text-neutral-500">
+        <p className="mt-1 text-xs leading-relaxed text-neutral-500 sm:text-sm">
           {producto.descripcion_corta}
         </p>
-        <p className="mt-2 font-serif text-2xl font-semibold text-rosea-500">
+        <p className="mt-2 font-serif text-xl font-semibold text-rosea-500 sm:text-2xl">
           {formatearPrecio(producto.precio)}
         </p>
       </div>
