@@ -35,16 +35,28 @@ export default function AdminPage() {
   }, []);
 
   async function cambiarEstado(p: Producto, estado: Estado) {
+    const anterior = productos;
     setProductos((prev) =>
       prev.map((x) => (x.id === p.id ? { ...x, estado } : x))
     );
-    await actualizarProducto(p.id, { estado });
+    try {
+      await actualizarProducto(p.id, { estado });
+    } catch {
+      setProductos(anterior);
+      alert("No se pudo actualizar el estado. Probá de nuevo.");
+    }
   }
 
   async function borrar(p: Producto) {
     if (!confirm(`¿Eliminar "${p.nombre}"?`)) return;
+    const anterior = productos;
     setProductos((prev) => prev.filter((x) => x.id !== p.id));
-    await eliminarProducto(p.id);
+    try {
+      await eliminarProducto(p.id);
+    } catch {
+      setProductos(anterior);
+      alert("No se pudo eliminar el producto. Probá de nuevo.");
+    }
   }
 
   async function salir() {

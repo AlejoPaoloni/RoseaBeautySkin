@@ -38,11 +38,13 @@ export async function guardarOrden(
   items: { id: string; orden_display: number }[]
 ): Promise<void> {
   const supabase = createClient();
-  await Promise.all(
+  const resultados = await Promise.all(
     items.map(({ id, orden_display }) =>
       supabase.from("productos").update({ orden_display }).eq("id", id)
     )
   );
+  const fallo = resultados.find((r) => r.error);
+  if (fallo?.error) throw fallo.error;
 }
 
 export async function subirImagen(blob: Blob, nombre: string): Promise<string> {
