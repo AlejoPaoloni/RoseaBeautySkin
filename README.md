@@ -1,7 +1,7 @@
 # Rosea Beauty — Landing Catalog
 
 Landing catalog + panel admin para maquillaje y skincare importado.
-Next.js 15 · Tailwind v4 · Supabase · Framer Motion.
+Next.js 16 · Tailwind v4 · Supabase · Framer Motion.
 
 ## Setup local
 
