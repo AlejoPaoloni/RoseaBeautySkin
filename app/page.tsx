@@ -1,4 +1,5 @@
 import CatalogSection from "@/components/landing/CatalogSection";
+import DestacadosSection from "@/components/landing/DestacadosSection";
 import Footer from "@/components/landing/Footer";
 import Hero from "@/components/landing/Hero";
 import Navbar from "@/components/landing/Navbar";
@@ -15,6 +16,7 @@ export default async function Home() {
     <main>
       <Navbar />
       <Hero />
+      <DestacadosSection productos={productos} />
       <CatalogSection productos={productos} />
       <PorEncargoSection productos={productos} />
       <Footer />

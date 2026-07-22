@@ -72,6 +72,21 @@ export default function AdminPage() {
     }
   }
 
+  async function cambiarDestacado(p: Producto) {
+    const anterior = productos;
+    setProductos((prev) =>
+      prev.map((x) =>
+        x.id === p.id ? { ...x, destacado: !x.destacado } : x
+      )
+    );
+    try {
+      await actualizarProducto(p.id, { destacado: !p.destacado });
+    } catch {
+      setProductos(anterior);
+      alert("No se pudo actualizar destacado. Probá de nuevo.");
+    }
+  }
+
   function onDragEnd(cat: Categoria, sub: string) {
     return async (event: DragEndEvent) => {
       const { active, over } = event;
@@ -164,6 +179,7 @@ export default function AdminPage() {
                               key={p.id}
                               producto={p}
                               onEstado={(e) => cambiarEstado(p, e)}
+                              onDestacado={() => cambiarDestacado(p)}
                               onEditar={() => {
                                 setEditando(p);
                                 setFormAbierto(true);

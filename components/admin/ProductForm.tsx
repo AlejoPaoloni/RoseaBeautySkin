@@ -29,6 +29,7 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
   const [estado, setEstado] = useState<Estado>(
     producto?.estado ?? "Disponible"
   );
+  const [destacado, setDestacado] = useState(producto?.destacado ?? false);
   const [archivo, setArchivo] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(
     producto?.imagen_url ?? null
@@ -73,6 +74,7 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
         subcategoria,
         estado,
         precio: precioNumero,
+        destacado,
       };
       if (producto) {
         await actualizarProducto(producto.id, datos);
@@ -167,6 +169,16 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
               <option key={e}>{e}</option>
             ))}
           </select>
+        </label>
+
+        <label className="mt-4 flex items-center gap-2 text-sm text-neutral-600">
+          <input
+            type="checkbox"
+            checked={destacado}
+            onChange={(e) => setDestacado(e.target.checked)}
+            className="h-4 w-4 accent-rosea-400"
+          />
+          Destacado
         </label>
 
         <label className="mt-4 block text-sm text-neutral-600">

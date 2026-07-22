@@ -14,20 +14,24 @@ const BADGE: Record<Producto["estado"], string> = {
 export default function ProductCard({
   producto,
   index = 0,
+  estatico = false,
 }: {
   producto: Producto;
   index?: number;
+  // true dentro del marquee: sin layout/exit animations (la pista ya se
+  // mueve con CSS y las cards duplicadas no deben animar posicion).
+  estatico?: boolean;
 }) {
   return (
     <motion.article
-      layout
+      layout={!estatico}
       initial={{ opacity: 0, y: 24 }}
       whileInView={{
         opacity: producto.estado === "Sin stock" ? 0.75 : 1,
         y: 0,
       }}
       viewport={{ once: true, margin: "-40px" }}
-      exit={{ opacity: 0, scale: 0.95 }}
+      exit={estatico ? undefined : { opacity: 0, scale: 0.95 }}
       transition={{
         type: "spring",
         stiffness: 120,

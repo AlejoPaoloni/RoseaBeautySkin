@@ -47,3 +47,7 @@ export function formatearPrecio(precio: number): string {
     maximumFractionDigits: 0,
   });
 }
+
+export function productosDestacados(productos: Producto[]): Producto[] {
+  return ordenarProductos(productos.filter((p) => p.destacado));
+}

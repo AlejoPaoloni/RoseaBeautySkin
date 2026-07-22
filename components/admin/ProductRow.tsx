@@ -9,6 +9,7 @@ interface Props {
   onEstado: (e: Estado) => void;
   onEditar: () => void;
   onBorrar: () => void;
+  onDestacado: () => void;
   dragHandle?: React.ReactNode;
 }
 
@@ -17,6 +18,7 @@ export default function ProductRow({
   onEstado,
   onEditar,
   onBorrar,
+  onDestacado,
   dragHandle,
 }: Props) {
   return (
@@ -33,6 +35,22 @@ export default function ProductRow({
           />
         )}
       </div>
+      <button
+        type="button"
+        onClick={onDestacado}
+        aria-label={
+          producto.destacado
+            ? "Quitar de destacados"
+            : "Marcar como destacado"
+        }
+        className={`px-1 text-lg leading-none transition-colors ${
+          producto.destacado
+            ? "text-amber-400 hover:text-amber-500"
+            : "text-neutral-300 hover:text-amber-400"
+        }`}
+      >
+        ★
+      </button>
       <span className="flex-1 truncate text-sm">{producto.nombre}</span>
       <select
         value={producto.estado}
