@@ -10,6 +10,7 @@ interface Props {
   onEstado: (e: Estado) => void;
   onEditar: () => void;
   onBorrar: () => void;
+  onDestacado: () => void;
 }
 
 export default function SortableRow({ producto, ...acciones }: Props) {
