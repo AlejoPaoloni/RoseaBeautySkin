@@ -10,6 +10,7 @@ export interface Producto {
   subcategoria: string;
   estado: Estado;
   precio: number;
+  destacado: boolean;
   orden_display: number;
   created_at: string;
 }

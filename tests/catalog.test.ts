@@ -5,6 +5,7 @@ import {
   formatearPrecio,
   ordenarProductos,
   productosPorEncargo,
+  productosDestacados,
 } from "@/lib/catalog";
 import { conOrden } from "@/lib/orden";
 import type { Producto } from "@/lib/types";
@@ -21,6 +22,7 @@ function producto(over: Partial<Producto> = {}): Producto {
     subcategoria: "Labiales",
     estado: "Disponible",
     precio: 10000,
+    destacado: false,
     orden_display: 0,
     created_at: "2026-01-01T00:00:00Z",
     ...over,
@@ -99,5 +101,21 @@ describe("formatearPrecio", () => {
     const resultado = formatearPrecio(0);
     expect(resultado).toContain("0");
     expect(resultado).toContain("$");
+  });
+});
+
+describe("productosDestacados", () => {
+  it("devuelve solo destacados, ordenados", () => {
+    const a = producto({ destacado: true, orden_display: 2 });
+    const b = producto({ destacado: true, orden_display: 1 });
+    const c = producto();
+    expect(productosDestacados([a, b, c]).map((p) => p.id)).toEqual([
+      b.id,
+      a.id,
+    ]);
+  });
+
+  it("devuelve vacio si no hay destacados", () => {
+    expect(productosDestacados([producto(), producto()])).toEqual([]);
   });
 });
