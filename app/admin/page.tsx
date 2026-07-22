@@ -5,15 +5,28 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type { Estado, Producto } from "@/lib/types";
 import { CATEGORIAS } from "@/lib/types";
+import type { Categoria } from "@/lib/types";
 import { agruparPorSubcategoria } from "@/lib/catalog";
 import {
   actualizarProducto,
   eliminarProducto,
   listarProductos,
+  guardarOrden,
 } from "@/lib/db";
+import { conOrden } from "@/lib/orden";
 import { createClient } from "@/lib/supabase/client";
 import ProductForm from "@/components/admin/ProductForm";
-import ProductRow from "@/components/admin/ProductRow";
+import SortableRow from "@/components/admin/SortableRow";
+import {
+  DndContext,
+  closestCenter,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -57,6 +70,32 @@ export default function AdminPage() {
       setProductos(anterior);
       alert("No se pudo eliminar el producto. Probá de nuevo.");
     }
+  }
+
+  function onDragEnd(cat: Categoria, sub: string) {
+    return async (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+      const grupo = agruparPorSubcategoria(productos, cat)[sub];
+      const desde = grupo.findIndex((p) => p.id === active.id);
+      const hasta = grupo.findIndex((p) => p.id === over.id);
+      if (desde === -1 || hasta === -1) return;
+      const nuevo = arrayMove(grupo, desde, hasta);
+      const orden = conOrden(nuevo);
+      const anterior = productos;
+      setProductos((prev) =>
+        prev.map((p) => {
+          const o = orden.find((x) => x.id === p.id);
+          return o ? { ...p, orden_display: o.orden_display } : p;
+        })
+      );
+      try {
+        await guardarOrden(orden);
+      } catch {
+        setProductos(anterior);
+        alert("No se pudo guardar el orden. Probá de nuevo.");
+      }
+    };
   }
 
   async function salir() {
@@ -111,25 +150,35 @@ export default function AdminPage() {
                     <h3 className="text-sm font-medium uppercase tracking-wider text-neutral-400">
                       {sub}
                     </h3>
-                    <div className="mt-2 space-y-2">
-                      {items.map((p) => (
-                        <ProductRow
-                          key={p.id}
-                          producto={p}
-                          onEstado={(e) => cambiarEstado(p, e)}
-                          onEditar={() => {
-                            setEditando(p);
-                            setFormAbierto(true);
-                          }}
-                          onBorrar={() => borrar(p)}
-                        />
-                      ))}
-                      {items.length === 0 && (
-                        <p className="rounded-lg border border-dashed border-rosea-200 p-3 text-sm text-neutral-400">
-                          Sin productos
-                        </p>
-                      )}
-                    </div>
+                    <DndContext
+                      collisionDetection={closestCenter}
+                      onDragEnd={onDragEnd(cat, sub)}
+                    >
+                      <SortableContext
+                        items={items.map((p) => p.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="mt-2 space-y-2">
+                          {items.map((p) => (
+                            <SortableRow
+                              key={p.id}
+                              producto={p}
+                              onEstado={(e) => cambiarEstado(p, e)}
+                              onEditar={() => {
+                                setEditando(p);
+                                setFormAbierto(true);
+                              }}
+                              onBorrar={() => borrar(p)}
+                            />
+                          ))}
+                          {items.length === 0 && (
+                            <p className="rounded-lg border border-dashed border-rosea-200 p-3 text-sm text-neutral-400">
+                              Sin productos
+                            </p>
+                          )}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
                   </div>
                 )
               )}
