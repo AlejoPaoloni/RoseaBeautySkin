@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   agruparPorSubcategoria,
   filtrarProductos,
+  formatearPrecio,
   ordenarProductos,
   productosPorEncargo,
 } from "@/lib/catalog";
@@ -19,6 +20,7 @@ function producto(over: Partial<Producto> = {}): Producto {
     categoria: "Maquillajes",
     subcategoria: "Labiales",
     estado: "Disponible",
+    precio: 10000,
     orden_display: 0,
     created_at: "2026-01-01T00:00:00Z",
     ...over,
@@ -83,5 +85,19 @@ describe("conOrden", () => {
       { id: ps[0].id, orden_display: 0 },
       { id: ps[1].id, orden_display: 1 },
     ]);
+  });
+});
+
+describe("formatearPrecio", () => {
+  it("formatea con separador de miles y sin decimales", () => {
+    const resultado = formatearPrecio(12500);
+    expect(resultado).toContain("12.500");
+    expect(resultado).toContain("$");
+  });
+
+  it("formatea precio cero", () => {
+    const resultado = formatearPrecio(0);
+    expect(resultado).toContain("0");
+    expect(resultado).toContain("$");
   });
 });
