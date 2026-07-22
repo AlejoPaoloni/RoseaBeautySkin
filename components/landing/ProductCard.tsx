@@ -58,7 +58,7 @@ export default function ProductCard({
         <p className="mt-1 text-sm leading-relaxed text-neutral-500">
           {producto.descripcion_corta}
         </p>
-        <p className="mt-2 font-serif text-lg text-rosea-500">
+        <p className="mt-2 font-serif text-2xl font-semibold text-rosea-500">
           {formatearPrecio(producto.precio)}
         </p>
       </div>
