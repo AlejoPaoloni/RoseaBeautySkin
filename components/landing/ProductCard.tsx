@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { formatearPrecio } from "@/lib/catalog";
 import type { Producto } from "@/lib/types";
 
 const BADGE: Record<Producto["estado"], string> = {
@@ -56,6 +57,9 @@ export default function ProductCard({
         </h3>
         <p className="mt-1 text-sm leading-relaxed text-neutral-500">
           {producto.descripcion_corta}
+        </p>
+        <p className="mt-2 font-serif text-lg text-rosea-500">
+          {formatearPrecio(producto.precio)}
         </p>
       </div>
     </motion.article>

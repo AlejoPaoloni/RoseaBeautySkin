@@ -17,6 +17,9 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
   const [descripcion, setDescripcion] = useState(
     producto?.descripcion_corta ?? ""
   );
+  const [precio, setPrecio] = useState(
+    producto ? String(producto.precio) : ""
+  );
   const [categoria, setCategoria] = useState<Categoria>(
     producto?.categoria ?? "Maquillajes"
   );
@@ -49,6 +52,11 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
       setError("El nombre es obligatorio");
       return;
     }
+    const precioNumero = Number(precio);
+    if (!Number.isFinite(precioNumero) || precioNumero < 0) {
+      setError("El precio debe ser un número válido mayor o igual a 0");
+      return;
+    }
     setGuardando(true);
     setError(null);
     try {
@@ -64,6 +72,7 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
         categoria,
         subcategoria,
         estado,
+        precio: precioNumero,
       };
       if (producto) {
         await actualizarProducto(producto.id, datos);
@@ -103,6 +112,19 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
             maxLength={150}
             rows={3}
             onChange={(e) => setDescripcion(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-rosea-300"
+          />
+        </label>
+
+        <label className="mt-4 block text-sm text-neutral-600">
+          Precio (ARS) *
+          <input
+            type="number"
+            min={0}
+            step={1}
+            required
+            value={precio}
+            onChange={(e) => setPrecio(e.target.value)}
             className="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-rosea-300"
           />
         </label>

@@ -7,7 +7,12 @@ type ProductoNuevo = Omit<Producto, "id" | "created_at">;
 export async function listarProductos(): Promise<Producto[]> {
   const { data, error } = await createClient().from("productos").select("*");
   if (error) throw error;
-  return ordenarProductos((data ?? []) as Producto[]);
+  return ordenarProductos(
+    ((data ?? []) as Array<Partial<Producto>>).map((p) => ({
+      ...p,
+      precio: p.precio ?? 0,
+    } as Producto))
+  );
 }
 
 export async function crearProducto(p: ProductoNuevo): Promise<void> {
