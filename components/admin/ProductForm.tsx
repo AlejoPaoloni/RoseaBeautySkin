@@ -53,8 +53,8 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
       return;
     }
     const precioNumero = Number(precio);
-    if (!Number.isFinite(precioNumero) || precioNumero < 0) {
-      setError("El precio debe ser un número válido mayor o igual a 0");
+    if (!Number.isInteger(precioNumero) || precioNumero < 0) {
+      setError("El precio debe ser un número entero mayor o igual a 0");
       return;
     }
     setGuardando(true);
