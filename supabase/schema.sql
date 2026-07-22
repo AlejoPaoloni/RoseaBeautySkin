@@ -11,6 +11,7 @@ create table public.productos (
   )),
   estado text not null default 'Disponible'
     check (estado in ('Disponible', 'Por Encargo', 'Sin stock')),
+  precio integer not null check (precio >= 0),
   orden_display int not null default 0,
   created_at timestamptz not null default now()
 );
