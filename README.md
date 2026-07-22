@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Rosea Beauty — Landing Catalog
 
-## Getting Started
+Landing catalog + panel admin para maquillaje y skincare importado.
+Next.js 15 · Tailwind v4 · Supabase · Framer Motion.
 
-First, run the development server:
+## Setup local
 
 ```bash
+npm install
+cp .env.example .env.local   # completar con datos de Supabase
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Configurar Supabase (una sola vez)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Crear proyecto en [supabase.com](https://supabase.com) (free tier).
+2. En **SQL Editor**, correr `supabase/schema.sql` y después `supabase/seed.sql`.
+3. En **Authentication → Users**, crear el usuario admin (email + password). Desactivar signups en **Authentication → Sign In / Up** si está habilitado.
+4. En **Project Settings → API**, copiar `URL` y `anon public key` a `.env.local`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+NEXT_PUBLIC_SUPABASE_URL=https://TU-PROYECTO.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+```
 
-## Learn More
+## Deploy en Vercel
 
-To learn more about Next.js, take a look at the following resources:
+1. Subir el repo a GitHub.
+2. En [vercel.com](https://vercel.com): **New Project** → importar el repo.
+3. Agregar las dos env vars de arriba.
+4. Deploy. Cada push a `main` redeploya solo.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Personalizar (sin tocar componentes)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **WhatsApp, tagline, Instagram, email, nota por encargo** → `lib/config.ts`.
+  - Número WhatsApp: código de país + número, sin `+` ni espacios. Ej: `5491112345678`.
+- **Paleta de colores** → `app/globals.css` (`@theme`, tokens `--color-rosea-*`).
+- **Logos** → `public/brand/caligrafia.svg` (hero) y `public/brand/monogram.svg` (navbar/footer). Favicon: `app/icon.svg`.
+- **Fuentes** → `app/layout.tsx` (`next/font`).
+- **Productos** → todo desde `/admin` (crear, editar, eliminar, reordenar con drag & drop, cambiar estado, subir fotos).
 
-## Deploy on Vercel
+## Estructura
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `app/page.tsx` — landing (ISR 60s)
+- `app/admin` — panel admin (protegido por Supabase Auth)
+- `components/landing`, `components/admin` — UI
+- `lib/` — config, tipos, lógica, clientes Supabase
+- `supabase/` — schema + seed SQL
+- `tests/` — tests de lógica (`npm run test`)
