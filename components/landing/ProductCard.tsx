@@ -41,19 +41,20 @@ export default function ProductCard({
         damping: 18,
         delay: (index % 4) * 0.06,
       }}
-      className={`group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 transition-shadow ${
+      className={`group flex h-full flex-col rounded-2xl bg-white shadow-sm ring-1 transition-shadow ${
         producto.estado === "Sin stock"
           ? "ring-neutral-200"
           : "ring-rosea-100/60 hover:shadow-xl hover:shadow-rosea-200/40"
       }`}
     >
-      <div className="relative aspect-[4/5] overflow-hidden bg-rosea-50">
+      <div className="relative aspect-[4/5] overflow-hidden rounded-t-2xl bg-rosea-50">
         {producto.imagen_url && (
           <Image
             src={producto.imagen_url}
             alt={producto.nombre}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+            unoptimized={producto.imagen_url.includes("sephora.com")}
             className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
               producto.estado === "Sin stock" ? "grayscale-[75%]" : ""
             }`}
