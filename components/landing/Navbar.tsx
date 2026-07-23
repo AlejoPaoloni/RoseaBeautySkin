@@ -140,11 +140,10 @@ export default function Navbar() {
                 href={config.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Instagram"
                 className="flex items-center gap-2 px-6 py-3 text-sm text-neutral-700"
               >
                 <InstagramIcon />
-                Instagram
+                @roseabeautyskin
               </a>
             </li>
           </motion.ul>
