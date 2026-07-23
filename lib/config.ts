@@ -6,7 +6,7 @@ export const config = {
     numero: "",
     mensaje: "Hola, tengo una consulta",
   },
-  instagram: "https://instagram.com/",
+  instagram: "https://instagram.com/roseabeautyskin",
   email: "contacto@roseabeauty.com",
   notaPorEncargo:
     "Los productos por encargo se piden al momento y llegan en 15 a 20 días.",
