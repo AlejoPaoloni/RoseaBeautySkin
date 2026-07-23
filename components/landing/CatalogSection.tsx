@@ -14,6 +14,7 @@ export default function CatalogSection({
 }) {
   const [categoria, setCategoria] = useState<Categoria | null>(null);
   const [subcategoria, setSubcategoria] = useState<string | null>(null);
+  const [soloDisponibles, setSoloDisponibles] = useState(false);
 
   // La Navbar emite este evento al clickear Maquillajes/Skincare
   useEffect(() => {
@@ -28,7 +29,12 @@ export default function CatalogSection({
     return () => window.removeEventListener("rosea:set-filter", onSetFilter);
   }, []);
 
-  const visibles = filtrarProductos(productos, categoria, subcategoria);
+  const visibles = filtrarProductos(
+    productos,
+    categoria,
+    subcategoria,
+    soloDisponibles
+  );
 
   return (
     <section id="catalogo" className="mx-auto max-w-6xl px-4 py-20">
@@ -44,11 +50,13 @@ export default function CatalogSection({
       <FilterBar
         categoria={categoria}
         subcategoria={subcategoria}
+        soloDisponibles={soloDisponibles}
         onCategoria={(c) => {
           setCategoria(c);
           setSubcategoria(null);
         }}
         onSubcategoria={setSubcategoria}
+        onSoloDisponibles={setSoloDisponibles}
       />
 
       <motion.div

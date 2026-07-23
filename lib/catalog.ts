@@ -12,12 +12,14 @@ export function ordenarProductos(productos: Producto[]): Producto[] {
 export function filtrarProductos(
   productos: Producto[],
   categoria: Categoria | null,
-  subcategoria: string | null
+  subcategoria: string | null,
+  soloDisponibles = false
 ): Producto[] {
   return productos.filter(
     (p) =>
       (!categoria || p.categoria === categoria) &&
-      (!subcategoria || p.subcategoria === subcategoria)
+      (!subcategoria || p.subcategoria === subcategoria) &&
+      (!soloDisponibles || p.estado === "Disponible")
   );
 }
 

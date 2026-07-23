@@ -7,8 +7,10 @@ import { SUBCATEGORIAS } from "@/lib/types";
 interface Props {
   categoria: Categoria | null;
   subcategoria: string | null;
+  soloDisponibles: boolean;
   onCategoria: (c: Categoria | null) => void;
   onSubcategoria: (s: string | null) => void;
+  onSoloDisponibles: (v: boolean) => void;
 }
 
 const OPCIONES: (Categoria | null)[] = [null, "Maquillajes", "Skincare"];
@@ -16,12 +18,14 @@ const OPCIONES: (Categoria | null)[] = [null, "Maquillajes", "Skincare"];
 export default function FilterBar({
   categoria,
   subcategoria,
+  soloDisponibles,
   onCategoria,
   onSubcategoria,
+  onSoloDisponibles,
 }: Props) {
   return (
     <div className="mt-8 flex flex-col items-center gap-4">
-      <div className="flex flex-wrap justify-center gap-2">
+      <div className="flex flex-wrap items-center justify-center gap-2">
         {OPCIONES.map((c) => {
           const activo = categoria === c;
           return (
@@ -38,6 +42,22 @@ export default function FilterBar({
             </button>
           );
         })}
+        <button
+          onClick={() => onSoloDisponibles(!soloDisponibles)}
+          aria-pressed={soloDisponibles}
+          className={`flex items-center gap-1.5 rounded-full px-5 py-2 text-sm tracking-wide transition-colors ${
+            soloDisponibles
+              ? "bg-emerald-500 text-white"
+              : "bg-rosea-50 text-neutral-600 hover:bg-rosea-100"
+          }`}
+        >
+          <span
+            className={`inline-block h-1.5 w-1.5 rounded-full ${
+              soloDisponibles ? "bg-white" : "bg-emerald-500"
+            }`}
+          />
+          Solo disponibles
+        </button>
       </div>
 
       <AnimatePresence>

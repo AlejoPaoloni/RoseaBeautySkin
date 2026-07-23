@@ -55,6 +55,15 @@ describe("filtrarProductos", () => {
   it("filtra por categoria", () => {
     expect(filtrarProductos(ps, "Skincare", null)).toHaveLength(1);
   });
+  it("solo disponibles filtra por estado Disponible", () => {
+    const qs = [
+      producto({ estado: "Disponible" }),
+      producto({ estado: "Por Encargo" }),
+      producto({ estado: "Sin stock" }),
+    ];
+    expect(filtrarProductos(qs, null, null, true)).toHaveLength(1);
+    expect(filtrarProductos(qs, null, null, false)).toHaveLength(3);
+  });
   it("filtra por subcategoria", () => {
     expect(filtrarProductos(ps, "Maquillajes", "Labios")).toHaveLength(1);
     expect(filtrarProductos(ps, "Maquillajes", "Rostro")).toHaveLength(0);
