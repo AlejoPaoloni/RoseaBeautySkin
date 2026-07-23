@@ -28,6 +28,22 @@ export default function Footer() {
           </svg>
           <span className="text-sm">@roseabeautyskin</span>
         </a>
+        <p className="flex items-center gap-1.5 text-sm text-rosea-500">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 21s-7-6.1-7-11.5A7 7 0 0 1 19 9.5C19 14.9 12 21 12 21Z" />
+            <circle cx="12" cy="9.5" r="2.3" />
+          </svg>
+          Rosario, Santa Fe - Argentina.
+        </p>
         <p className="text-xs text-neutral-400">
           © {new Date().getFullYear()} {config.marca}. Todos los derechos
           reservados.
