@@ -14,6 +14,7 @@ interface Props {
 
 export default function ProductForm({ producto, onClose, onSaved }: Props) {
   const [nombre, setNombre] = useState(producto?.nombre ?? "");
+  const [marca, setMarca] = useState(producto?.marca ?? "");
   const [descripcion, setDescripcion] = useState(
     producto?.descripcion_corta ?? ""
   );
@@ -84,6 +85,7 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
         .filter((t) => t.nombre !== "");
       const datos = {
         nombre: nombre.trim(),
+        marca: marca.trim() || null,
         descripcion_corta: descripcion.trim(),
         imagen_url,
         categoria,
@@ -120,6 +122,16 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
           <input
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-rosea-300"
+          />
+        </label>
+
+        <label className="mt-4 block text-sm text-neutral-600">
+          Marca
+          <input
+            value={marca}
+            onChange={(e) => setMarca(e.target.value)}
+            placeholder="Ej: Maybelline"
             className="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-rosea-300"
           />
         </label>

@@ -16,10 +16,11 @@ function producto(over: Partial<Producto> = {}): Producto {
   return {
     id: `id-${n}`,
     nombre: `Producto ${n}`,
+    marca: null,
     descripcion_corta: null,
     imagen_url: null,
     categoria: "Maquillajes",
-    subcategoria: "Labiales",
+    subcategoria: "Labios",
     estado: "Disponible",
     precio: 10000,
     destacado: false,
@@ -45,8 +46,8 @@ describe("ordenarProductos", () => {
 
 describe("filtrarProductos", () => {
   const ps = [
-    producto({ categoria: "Maquillajes", subcategoria: "Labiales" }),
-    producto({ categoria: "Skincare", subcategoria: "Hidratantes" }),
+    producto({ categoria: "Maquillajes", subcategoria: "Labios" }),
+    producto({ categoria: "Skincare", subcategoria: "Skincare" }),
   ];
   it("sin filtros devuelve todo", () => {
     expect(filtrarProductos(ps, null, null)).toHaveLength(2);
@@ -55,8 +56,8 @@ describe("filtrarProductos", () => {
     expect(filtrarProductos(ps, "Skincare", null)).toHaveLength(1);
   });
   it("filtra por subcategoria", () => {
-    expect(filtrarProductos(ps, "Maquillajes", "Labiales")).toHaveLength(1);
-    expect(filtrarProductos(ps, "Maquillajes", "Bases & Correctores")).toHaveLength(0);
+    expect(filtrarProductos(ps, "Maquillajes", "Labios")).toHaveLength(1);
+    expect(filtrarProductos(ps, "Maquillajes", "Rostro")).toHaveLength(0);
   });
 });
 
@@ -69,15 +70,11 @@ describe("productosPorEncargo", () => {
 
 describe("agruparPorSubcategoria", () => {
   it("agrupa con todas las subcategorias presentes", () => {
-    const ps = [producto({ subcategoria: "Labiales", orden_display: 1 })];
+    const ps = [producto({ subcategoria: "Labios", orden_display: 1 })];
     const grupos = agruparPorSubcategoria(ps, "Maquillajes");
-    expect(Object.keys(grupos)).toEqual([
-      "Bases & Correctores",
-      "Sombras & Delineadores",
-      "Labiales",
-    ]);
-    expect(grupos["Labiales"]).toHaveLength(1);
-    expect(grupos["Bases & Correctores"]).toHaveLength(0);
+    expect(Object.keys(grupos)).toEqual(["Rostro", "Ojos", "Labios"]);
+    expect(grupos["Labios"]).toHaveLength(1);
+    expect(grupos["Rostro"]).toHaveLength(0);
   });
 });
 

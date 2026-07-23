@@ -2,12 +2,12 @@
 create table public.productos (
   id uuid primary key default gen_random_uuid(),
   nombre text not null,
+  marca text,
   descripcion_corta varchar(150),
   imagen_url text,
   categoria text not null check (categoria in ('Maquillajes', 'Skincare')),
   subcategoria text not null check (subcategoria in (
-    'Bases & Correctores', 'Sombras & Delineadores', 'Labiales',
-    'Limpiadoras', 'Hidratantes', 'Serums & Tratamientos'
+    'Rostro', 'Ojos', 'Labios', 'Skincare'
   )),
   estado text not null default 'Disponible'
     check (estado in ('Disponible', 'Por Encargo', 'Sin stock')),

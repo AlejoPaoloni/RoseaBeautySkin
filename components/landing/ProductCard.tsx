@@ -66,6 +66,11 @@ export default function ProductCard({
         </span>
       </div>
       <div className="flex flex-1 flex-col p-3 sm:p-4">
+        {producto.marca && (
+          <p className="text-[10px] font-medium uppercase tracking-widest text-neutral-400 sm:text-xs">
+            {producto.marca}
+          </p>
+        )}
         <h3 className="font-serif text-base text-neutral-900 sm:text-lg">
           {producto.nombre}
         </h3>

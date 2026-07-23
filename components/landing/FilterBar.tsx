@@ -41,7 +41,7 @@ export default function FilterBar({
       </div>
 
       <AnimatePresence>
-        {categoria && (
+        {categoria && SUBCATEGORIAS[categoria].length > 1 && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
