@@ -4,13 +4,34 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import type { Categoria } from "@/lib/types";
+import { config } from "@/lib/config";
 
 const LINKS: { label: string; categoria: Categoria | null; href: string }[] = [
+  { label: "Destacados", categoria: null, href: "#destacados" },
   { label: "Maquillajes", categoria: "Maquillajes", href: "#catalogo" },
   { label: "Skincare", categoria: "Skincare", href: "#catalogo" },
   { label: "Por Encargo", categoria: null, href: "#por-encargo" },
   { label: "Contacto", categoria: null, href: "#contacto" },
 ];
+
+function InstagramIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="2" y="2" width="20" height="20" rx="5" />
+      <circle cx="12" cy="12" r="4.2" />
+      <circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -44,7 +65,7 @@ export default function Navbar() {
         </a>
 
         {/* Desktop */}
-        <ul className="hidden gap-8 text-sm tracking-wide md:flex">
+        <ul className="hidden items-center gap-8 text-sm tracking-wide md:flex">
           {LINKS.map((l) => (
             <li key={l.label}>
               <a
@@ -56,6 +77,17 @@ export default function Navbar() {
               </a>
             </li>
           ))}
+          <li>
+            <a
+              href={config.instagram}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              className="block text-neutral-700 transition-colors hover:text-rosea-500"
+            >
+              <InstagramIcon />
+            </a>
+          </li>
         </ul>
 
         {/* Hamburguesa mobile */}
@@ -103,6 +135,18 @@ export default function Navbar() {
                 </a>
               </li>
             ))}
+            <li className="border-t border-rosea-50">
+              <a
+                href={config.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                className="flex items-center gap-2 px-6 py-3 text-sm text-neutral-700"
+              >
+                <InstagramIcon />
+                Instagram
+              </a>
+            </li>
           </motion.ul>
         )}
       </AnimatePresence>
