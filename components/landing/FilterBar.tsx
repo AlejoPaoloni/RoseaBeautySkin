@@ -15,6 +15,10 @@ interface Props {
 
 const OPCIONES: (Categoria | null)[] = [null, "Maquillajes", "Skincare"];
 
+const ETIQUETAS: Record<string, string> = {
+  Skincare: "Skin Care",
+};
+
 export default function FilterBar({
   categoria,
   subcategoria,
@@ -38,7 +42,7 @@ export default function FilterBar({
                   : "bg-rosea-50 text-neutral-600 hover:bg-rosea-100"
               }`}
             >
-              {c ?? "Todos"}
+              {c ? (ETIQUETAS[c] ?? c) : "Todos"}
             </button>
           );
         })}

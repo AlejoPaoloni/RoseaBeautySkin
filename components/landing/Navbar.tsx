@@ -9,7 +9,7 @@ import { config } from "@/lib/config";
 const LINKS: { label: string; categoria: Categoria | null; href: string }[] = [
   { label: "Destacados", categoria: null, href: "#destacados" },
   { label: "Maquillajes", categoria: "Maquillajes", href: "#catalogo" },
-  { label: "Skincare", categoria: "Skincare", href: "#catalogo" },
+  { label: "Skin Care", categoria: "Skincare", href: "#catalogo" },
   { label: "Por Encargo", categoria: null, href: "#por-encargo" },
   { label: "Contacto", categoria: null, href: "#contacto" },
 ];
