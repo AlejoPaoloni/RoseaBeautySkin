@@ -1,6 +1,6 @@
 export const config = {
   marca: "Rosea Beauty",
-  tagline: "Belleza importada, elegida para vos",
+  tagline: "Tu rutina de belleza, nivel internacional",
   whatsapp: {
     // Codigo de pais + numero, sin "+" ni espacios. Ej: "5491112345678"
     numero: "",
