@@ -10,8 +10,7 @@ export default function Footer() {
           href={config.instagram}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Instagram"
-          className="text-neutral-500 transition-colors hover:text-rosea-500"
+          className="flex items-center gap-2 text-neutral-500 transition-colors hover:text-rosea-500"
         >
           <svg
             width="24"
@@ -27,6 +26,7 @@ export default function Footer() {
             <circle cx="12" cy="12" r="4.2" />
             <circle cx="17.3" cy="6.7" r="1.1" fill="currentColor" stroke="none" />
           </svg>
+          <span className="text-sm">@roseabeautyskin</span>
         </a>
         <p className="text-xs text-neutral-400">
           © {new Date().getFullYear()} {config.marca}. Todos los derechos
