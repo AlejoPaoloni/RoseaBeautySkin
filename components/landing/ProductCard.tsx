@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { formatearPrecio } from "@/lib/catalog";
 import type { Producto } from "@/lib/types";
+import ColorSwatches from "@/components/common/ColorSwatches";
 
 const BADGE: Record<Producto["estado"], string> = {
   Disponible: "bg-emerald-100 text-emerald-700",
@@ -71,6 +72,9 @@ export default function ProductCard({
         <p className="mt-1 text-xs leading-relaxed text-neutral-500 sm:text-sm">
           {producto.descripcion_corta}
         </p>
+        {producto.tonos && producto.tonos.length > 0 && (
+          <ColorSwatches tonos={producto.tonos} />
+        )}
         <p className="mt-auto pt-2 font-serif text-xl font-semibold text-rosea-500 sm:text-2xl">
           {formatearPrecio(producto.precio)}
         </p>

@@ -1,6 +1,11 @@
 export type Categoria = "Maquillajes" | "Skincare";
 export type Estado = "Disponible" | "Por Encargo" | "Sin stock";
 
+export interface Tono {
+  nombre: string;
+  hex: string;
+}
+
 export interface Producto {
   id: string;
   nombre: string;
@@ -11,6 +16,7 @@ export interface Producto {
   estado: Estado;
   precio: number;
   destacado: boolean;
+  tonos: Tono[] | null;
   orden_display: number;
   created_at: string;
 }

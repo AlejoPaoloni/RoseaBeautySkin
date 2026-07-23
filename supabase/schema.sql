@@ -13,6 +13,7 @@ create table public.productos (
     check (estado in ('Disponible', 'Por Encargo', 'Sin stock')),
   precio integer not null check (precio >= 0),
   destacado boolean not null default false,
+  tonos jsonb,
   orden_display int not null default 0,
   created_at timestamptz not null default now()
 );

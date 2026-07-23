@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Categoria, Estado, Producto } from "@/lib/types";
+import type { Categoria, Estado, Producto, Tono } from "@/lib/types";
 import { CATEGORIAS, ESTADOS, SUBCATEGORIAS } from "@/lib/types";
 import { actualizarProducto, crearProducto, subirImagen } from "@/lib/db";
 import { comprimirImagen } from "@/lib/imagen";
@@ -30,6 +30,7 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
     producto?.estado ?? "Disponible"
   );
   const [destacado, setDestacado] = useState(producto?.destacado ?? false);
+  const [tonos, setTonos] = useState<Tono[]>(producto?.tonos ?? []);
   const [archivo, setArchivo] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(
     producto?.imagen_url ?? null
@@ -45,6 +46,18 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
   function elegirArchivo(f: File | null) {
     setArchivo(f);
     if (f) setPreview(URL.createObjectURL(f));
+  }
+
+  function agregarTono() {
+    setTonos([...tonos, { nombre: "", hex: "#d5998f" }]);
+  }
+
+  function actualizarTono(i: number, campo: keyof Tono, valor: string) {
+    setTonos(tonos.map((t, j) => (j === i ? { ...t, [campo]: valor } : t)));
+  }
+
+  function quitarTono(i: number) {
+    setTonos(tonos.filter((_, j) => j !== i));
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -66,6 +79,9 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
         const blob = await comprimirImagen(archivo);
         imagen_url = await subirImagen(blob, `${crypto.randomUUID()}.webp`);
       }
+      const tonosLimpios = tonos
+        .map((t) => ({ ...t, nombre: t.nombre.trim() }))
+        .filter((t) => t.nombre !== "");
       const datos = {
         nombre: nombre.trim(),
         descripcion_corta: descripcion.trim(),
@@ -75,6 +91,7 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
         estado,
         precio: precioNumero,
         destacado,
+        tonos: tonosLimpios.length > 0 ? tonosLimpios : null,
       };
       if (producto) {
         await actualizarProducto(producto.id, datos);
@@ -180,6 +197,50 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
           />
           Destacado
         </label>
+
+        <div className="mt-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-neutral-600">Tonos</span>
+            <button
+              type="button"
+              onClick={agregarTono}
+              className="rounded-full bg-rosea-50 px-3 py-1 text-xs text-rosea-700 hover:bg-rosea-100"
+            >
+              + Agregar tono
+            </button>
+          </div>
+          {tonos.length > 0 && (
+            <div className="mt-2 space-y-2">
+              {tonos.map((tono, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={tono.hex}
+                    onChange={(e) => actualizarTono(i, "hex", e.target.value)}
+                    className="h-9 w-9 shrink-0 cursor-pointer rounded-lg border border-neutral-200"
+                    aria-label={`Color del tono ${i + 1}`}
+                  />
+                  <input
+                    value={tono.nombre}
+                    placeholder="Nombre del tono"
+                    onChange={(e) =>
+                      actualizarTono(i, "nombre", e.target.value)
+                    }
+                    className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-rosea-300"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => quitarTono(i)}
+                    aria-label={`Quitar tono ${i + 1}`}
+                    className="shrink-0 rounded-full px-2 py-1 text-sm text-neutral-400 hover:bg-red-50 hover:text-red-500"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <label className="mt-4 block text-sm text-neutral-600">
           Imagen

@@ -23,6 +23,7 @@ function producto(over: Partial<Producto> = {}): Producto {
     estado: "Disponible",
     precio: 10000,
     destacado: false,
+    tonos: null,
     orden_display: 0,
     created_at: "2026-01-01T00:00:00Z",
     ...over,
