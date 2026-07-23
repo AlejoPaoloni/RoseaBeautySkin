@@ -40,7 +40,7 @@ export default function ProductCard({
         damping: 18,
         delay: (index % 4) * 0.06,
       }}
-      className={`group overflow-hidden rounded-2xl bg-white shadow-sm ring-1 transition-shadow ${
+      className={`group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 transition-shadow ${
         producto.estado === "Sin stock"
           ? "grayscale ring-neutral-200"
           : "ring-rosea-100/60 hover:shadow-xl hover:shadow-rosea-200/40"
@@ -62,14 +62,14 @@ export default function ProductCard({
           {producto.estado}
         </span>
       </div>
-      <div className="p-3 sm:p-4">
+      <div className="flex flex-1 flex-col p-3 sm:p-4">
         <h3 className="font-serif text-base text-neutral-900 sm:text-lg">
           {producto.nombre}
         </h3>
         <p className="mt-1 text-xs leading-relaxed text-neutral-500 sm:text-sm">
           {producto.descripcion_corta}
         </p>
-        <p className="mt-2 font-serif text-xl font-semibold text-rosea-500 sm:text-2xl">
+        <p className="mt-auto pt-2 font-serif text-xl font-semibold text-rosea-500 sm:text-2xl">
           {formatearPrecio(producto.precio)}
         </p>
       </div>
