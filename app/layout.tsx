@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
   ),
-  title: `${config.marca} — Maquillaje y Skincare importado`,
+  title: `${config.marca} | Make Up & Skin Care Importado 💄`,
   description: config.tagline,
   openGraph: {
     title: config.marca,
