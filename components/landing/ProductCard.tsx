@@ -8,7 +8,7 @@ import type { Producto } from "@/lib/types";
 const BADGE: Record<Producto["estado"], string> = {
   Disponible: "bg-emerald-100 text-emerald-700",
   "Por Encargo": "bg-amber-100 text-amber-800",
-  "Sin stock": "bg-neutral-200 text-neutral-500",
+  "Sin stock": "bg-red-100 text-red-600",
 };
 
 export default function ProductCard({
@@ -42,7 +42,7 @@ export default function ProductCard({
       }}
       className={`group flex h-full flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 transition-shadow ${
         producto.estado === "Sin stock"
-          ? "grayscale ring-neutral-200"
+          ? "ring-neutral-200"
           : "ring-rosea-100/60 hover:shadow-xl hover:shadow-rosea-200/40"
       }`}
     >
@@ -53,7 +53,9 @@ export default function ProductCard({
             alt={producto.nombre}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
+              producto.estado === "Sin stock" ? "grayscale" : ""
+            }`}
           />
         )}
         <span
