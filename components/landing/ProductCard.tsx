@@ -54,7 +54,7 @@ export default function ProductCard({
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
             className={`object-cover transition-transform duration-500 group-hover:scale-105 ${
-              producto.estado === "Sin stock" ? "grayscale-[60%]" : ""
+              producto.estado === "Sin stock" ? "grayscale-[75%]" : ""
             }`}
           />
         )}
