@@ -36,10 +36,10 @@ export default function Hero() {
         <Image
           src="/brand/caligrafia.svg"
           alt={config.marca}
-          width={560}
-          height={179}
+          width={640}
+          height={205}
           priority
-          className="w-[min(80vw,560px)]"
+          className="w-[min(82vw,640px)]"
         />
         <motion.p
           initial={{ opacity: 0, y: 16 }}
