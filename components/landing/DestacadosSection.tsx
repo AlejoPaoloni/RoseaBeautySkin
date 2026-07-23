@@ -32,7 +32,7 @@ export default function DestacadosSection({
   return (
     <section id="destacados" className="py-16">
       <h2 className="text-center font-serif text-4xl text-rosea-700 md:text-5xl">
-        Productos Destacados
+        Productos Destacados <span aria-hidden>✨</span>
       </h2>
       <div className="group mt-10 overflow-hidden py-2 motion-reduce:overflow-x-auto">
         <div
