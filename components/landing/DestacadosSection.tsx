@@ -3,6 +3,7 @@
 import type { Producto } from "@/lib/types";
 import { productosDestacados } from "@/lib/catalog";
 import ProductCard from "./ProductCard";
+import Sparkle from "@/components/common/Sparkle";
 
 // Repite la lista hasta alcanzar el minimo de cards para que una copia
 // de la pista cubra el viewport mas ancho (~1536px / 240px por card).
@@ -31,8 +32,18 @@ export default function DestacadosSection({
 
   return (
     <section id="destacados" className="py-16">
-      <h2 className="text-center font-serif text-4xl text-rosea-700 md:text-5xl">
-        Productos Destacados <span aria-hidden>✨</span>
+      <h2 className="flex items-center justify-center gap-2 text-center font-serif text-4xl text-rosea-400 md:gap-3 md:text-5xl">
+        <Sparkle className="h-3 w-3 text-rosea-300 md:h-4 md:w-4" delay={0} />
+        <Sparkle
+          className="h-4 w-4 -translate-y-2 text-rosea-400 md:h-5 md:w-5"
+          delay={0.6}
+        />
+        <span className="text-rosea-700">Productos Destacados</span>
+        <Sparkle
+          className="h-4 w-4 -translate-y-2 text-rosea-400 md:h-5 md:w-5"
+          delay={0.3}
+        />
+        <Sparkle className="h-3 w-3 text-rosea-300 md:h-4 md:w-4" delay={0.9} />
       </h2>
       <div className="group mt-10 overflow-hidden py-2 motion-reduce:overflow-x-auto">
         <div
