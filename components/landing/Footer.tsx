@@ -5,7 +5,12 @@ export default function Footer() {
   return (
     <footer id="contacto" className="border-t border-rosea-100 bg-white py-12">
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 text-center">
-        <Image src="/brand/monogram.svg" alt="RB" width={64} height={48} />
+        <Image
+          src="/brand/caligrafia.svg"
+          alt={config.marca}
+          width={200}
+          height={64}
+        />
         <a
           href={config.instagram}
           target="_blank"
