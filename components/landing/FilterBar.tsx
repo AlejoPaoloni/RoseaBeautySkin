@@ -42,22 +42,6 @@ export default function FilterBar({
             </button>
           );
         })}
-        <button
-          onClick={() => onSoloDisponibles(!soloDisponibles)}
-          aria-pressed={soloDisponibles}
-          className={`flex items-center gap-1.5 rounded-full px-5 py-2 text-sm tracking-wide transition-colors ${
-            soloDisponibles
-              ? "bg-emerald-500 text-white"
-              : "bg-rosea-50 text-neutral-600 hover:bg-rosea-100"
-          }`}
-        >
-          <span
-            className={`inline-block h-1.5 w-1.5 rounded-full ${
-              soloDisponibles ? "bg-white" : "bg-emerald-500"
-            }`}
-          />
-          Solo disponibles
-        </button>
       </div>
 
       <AnimatePresence>
@@ -88,6 +72,23 @@ export default function FilterBar({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <button
+        onClick={() => onSoloDisponibles(!soloDisponibles)}
+        aria-pressed={soloDisponibles}
+        className={`flex items-center gap-1.5 rounded-full px-5 py-2 text-sm tracking-wide transition-colors ${
+          soloDisponibles
+            ? "bg-emerald-500 text-white"
+            : "bg-rosea-50 text-neutral-600 hover:bg-rosea-100"
+        }`}
+      >
+        <span
+          className={`inline-block h-1.5 w-1.5 rounded-full ${
+            soloDisponibles ? "bg-white" : "bg-emerald-500"
+          }`}
+        />
+        Solo disponibles
+      </button>
     </div>
   );
 }
