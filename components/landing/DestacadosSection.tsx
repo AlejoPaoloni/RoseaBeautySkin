@@ -34,7 +34,7 @@ export default function DestacadosSection({
       <h2 className="text-center font-serif text-4xl text-rosea-700 md:text-5xl">
         Productos Destacados
       </h2>
-      <div className="group mt-10 overflow-hidden pb-2 motion-reduce:overflow-x-auto">
+      <div className="group mt-10 overflow-hidden py-2 motion-reduce:overflow-x-auto">
         <div
           className="animate-marquee flex w-max group-hover:[animation-play-state:paused]"
           style={{ animationDuration: `${duracion}s` }}
