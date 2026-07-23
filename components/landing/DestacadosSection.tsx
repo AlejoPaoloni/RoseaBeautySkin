@@ -5,8 +5,8 @@ import { productosDestacados } from "@/lib/catalog";
 import ProductCard from "./ProductCard";
 
 // Repite la lista hasta alcanzar el minimo de cards para que una copia
-// de la pista cubra el viewport mas ancho (~1536px / 240px por card).
-const MIN_CARDS_POR_COPIA = 7;
+// de la pista cubra el viewport mas ancho (~1536px / 208px por card).
+const MIN_CARDS_POR_COPIA = 8;
 
 function repetirHasta(items: Producto[], minimo: number): Producto[] {
   const resultado: Producto[] = [];
@@ -34,7 +34,7 @@ export default function DestacadosSection({
       <h2 className="text-center font-serif text-4xl text-rosea-700 md:text-5xl">
         Productos Destacados
       </h2>
-      <div className="group mt-10 overflow-hidden motion-reduce:overflow-x-auto">
+      <div className="group mt-10 overflow-hidden pb-2 motion-reduce:overflow-x-auto">
         <div
           className="animate-marquee flex w-max group-hover:[animation-play-state:paused]"
           style={{ animationDuration: `${duracion}s` }}
@@ -42,7 +42,7 @@ export default function DestacadosSection({
           {pista.map((p, i) => (
             <div
               key={`${p.id}-${i}`}
-              className={`w-60 shrink-0 pr-4 ${
+              className={`w-52 shrink-0 pr-4 ${
                 i >= items.length ? "motion-reduce:hidden" : ""
               }`}
               aria-hidden={i >= items.length}

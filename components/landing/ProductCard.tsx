@@ -25,7 +25,9 @@ export default function ProductCard({
   return (
     <motion.article
       layout={!estatico}
-      initial={{ opacity: 0, y: 24 }}
+      // En marquee (estatico) sin desplazamiento vertical: el contenedor
+      // overflow-hidden recortaria la card mientras sube.
+      initial={{ opacity: 0, y: estatico ? 0 : 24 }}
       whileInView={{
         opacity: producto.estado === "Sin stock" ? 0.75 : 1,
         y: 0,
