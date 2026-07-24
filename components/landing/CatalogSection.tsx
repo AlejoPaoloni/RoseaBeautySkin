@@ -21,6 +21,12 @@ export default function CatalogSection({
   const [precioMin, setPrecioMin] = useState(piso);
   const [precioMax, setPrecioMax] = useState(tope);
 
+  // Sincronizar extremos si el catálogo cambia (ej: se agregan productos)
+  useEffect(() => {
+    setPrecioMin(piso);
+    setPrecioMax(tope);
+  }, [piso, tope]);
+
   // La Navbar emite este evento al clickear Maquillajes/Skincare
   useEffect(() => {
     function onSetFilter(e: Event) {
