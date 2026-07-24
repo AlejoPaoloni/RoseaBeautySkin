@@ -49,7 +49,9 @@ export default function ColorSwatches({ tonos }: { tonos: Tono[] }) {
               botones.current[tono.hex] = el;
             }}
             aria-label={`Tono: ${tono.nombre}`}
-            className="h-6 w-6 rounded-full border border-neutral-200 transition-transform hover:scale-125"
+            className={`h-6 w-6 rounded-full border border-neutral-200 transition-transform hover:scale-125 ${
+              abierto === tono.hex ? "scale-125" : ""
+            }`}
             style={{ backgroundColor: tono.hex }}
             onMouseEnter={() => mostrar(tono.hex)}
             onMouseLeave={() => setAbierto(null)}
