@@ -3,6 +3,7 @@
 import Image from "next/image";
 import type { Estado, Producto } from "@/lib/types";
 import { ESTADOS } from "@/lib/types";
+import { formatearPrecio } from "@/lib/catalog";
 
 interface Props {
   producto: Producto;
@@ -51,7 +52,33 @@ export default function ProductRow({
       >
         ★
       </button>
-      <span className="flex-1 truncate text-sm">{producto.nombre}</span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-2">
+          <span className="truncate text-sm">{producto.nombre}</span>
+          {producto.marca && (
+            <span className="shrink-0 truncate text-xs text-neutral-400">
+              {producto.marca}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-rosea-600">
+            {formatearPrecio(producto.precio)}
+          </span>
+          {producto.tonos && producto.tonos.length > 0 && (
+            <div className="flex items-center gap-0.5">
+              {producto.tonos.map((t) => (
+                <span
+                  key={t.hex}
+                  title={t.nombre}
+                  className="h-3 w-3 shrink-0 rounded-full ring-1 ring-black/10"
+                  style={{ backgroundColor: t.hex }}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
       <select
         value={producto.estado}
         onChange={(e) => onEstado(e.target.value as Estado)}
