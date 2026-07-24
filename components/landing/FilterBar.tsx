@@ -8,9 +8,15 @@ interface Props {
   categoria: Categoria | null;
   subcategoria: string | null;
   soloDisponibles: boolean;
+  busqueda: string;
+  precioMin: string;
+  precioMax: string;
   onCategoria: (c: Categoria | null) => void;
   onSubcategoria: (s: string | null) => void;
   onSoloDisponibles: (v: boolean) => void;
+  onBusqueda: (v: string) => void;
+  onPrecioMin: (v: string) => void;
+  onPrecioMax: (v: string) => void;
 }
 
 const OPCIONES: (Categoria | null)[] = [null, "Maquillajes", "Skincare"];
@@ -23,9 +29,15 @@ export default function FilterBar({
   categoria,
   subcategoria,
   soloDisponibles,
+  busqueda,
+  precioMin,
+  precioMax,
   onCategoria,
   onSubcategoria,
   onSoloDisponibles,
+  onBusqueda,
+  onPrecioMin,
+  onPrecioMax,
 }: Props) {
   return (
     <div className="mt-8 flex flex-col items-center gap-4">
@@ -76,6 +88,40 @@ export default function FilterBar({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <input
+        type="search"
+        value={busqueda}
+        onChange={(e) => onBusqueda(e.target.value)}
+        placeholder="Buscar por nombre o marca..."
+        aria-label="Buscar productos por nombre o marca"
+        className="w-full max-w-xs rounded-full bg-white px-5 py-2 text-sm text-neutral-600 ring-1 ring-rosea-200 transition-shadow placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-rosea-400 sm:max-w-sm"
+      />
+
+      <div className="flex items-center gap-2 rounded-full bg-rosea-50 px-4 py-1.5 text-sm">
+        <span className="text-rosea-700">Precio</span>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          value={precioMin}
+          onChange={(e) => onPrecioMin(e.target.value)}
+          placeholder="Min"
+          aria-label="Precio mínimo"
+          className="w-20 rounded-full bg-white px-3 py-1 text-center text-neutral-600 ring-1 ring-rosea-200 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-rosea-400"
+        />
+        <span className="text-neutral-400">–</span>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          value={precioMax}
+          onChange={(e) => onPrecioMax(e.target.value)}
+          placeholder="Max"
+          aria-label="Precio máximo"
+          className="w-20 rounded-full bg-white px-3 py-1 text-center text-neutral-600 ring-1 ring-rosea-200 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-rosea-400"
+        />
+      </div>
 
       <button
         onClick={() => onSoloDisponibles(!soloDisponibles)}

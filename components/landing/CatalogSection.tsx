@@ -15,6 +15,9 @@ export default function CatalogSection({
   const [categoria, setCategoria] = useState<Categoria | null>(null);
   const [subcategoria, setSubcategoria] = useState<string | null>(null);
   const [soloDisponibles, setSoloDisponibles] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
+  const [precioMin, setPrecioMin] = useState("");
+  const [precioMax, setPrecioMax] = useState("");
 
   // La Navbar emite este evento al clickear Maquillajes/Skincare
   useEffect(() => {
@@ -33,7 +36,10 @@ export default function CatalogSection({
     productos,
     categoria,
     subcategoria,
-    soloDisponibles
+    soloDisponibles,
+    busqueda,
+    precioMin === "" ? null : Number(precioMin),
+    precioMax === "" ? null : Number(precioMax)
   );
 
   return (
@@ -57,6 +63,12 @@ export default function CatalogSection({
         }}
         onSubcategoria={setSubcategoria}
         onSoloDisponibles={setSoloDisponibles}
+        busqueda={busqueda}
+        precioMin={precioMin}
+        precioMax={precioMax}
+        onBusqueda={setBusqueda}
+        onPrecioMin={setPrecioMin}
+        onPrecioMax={setPrecioMax}
       />
 
       <motion.div
@@ -72,7 +84,8 @@ export default function CatalogSection({
 
       {visibles.length === 0 && (
         <p className="mt-10 text-center text-neutral-400">
-          No hay productos en esta categoría todavía.
+          No encontramos productos con estos filtros. Probá ajustar la búsqueda,
+          el precio o la categoría.
         </p>
       )}
     </section>

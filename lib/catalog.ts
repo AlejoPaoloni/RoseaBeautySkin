@@ -13,13 +13,23 @@ export function filtrarProductos(
   productos: Producto[],
   categoria: Categoria | null,
   subcategoria: string | null,
-  soloDisponibles = false
+  soloDisponibles = false,
+  busqueda: string | null = null,
+  precioMin: number | null = null,
+  precioMax: number | null = null
 ): Producto[] {
+  const q = busqueda?.trim().toLowerCase() ?? "";
   return productos.filter(
     (p) =>
       (!categoria || p.categoria === categoria) &&
       (!subcategoria || p.subcategoria === subcategoria) &&
-      (!soloDisponibles || p.estado === "Disponible")
+      (!soloDisponibles || p.estado === "Disponible") &&
+      (!q ||
+        p.nombre.toLowerCase().includes(q) ||
+        (p.marca?.toLowerCase().includes(q) ?? false)) &&
+      // == null para que 0 sea un limite valido, no "sin filtro"
+      (precioMin == null || p.precio >= precioMin) &&
+      (precioMax == null || p.precio <= precioMax)
   );
 }
 

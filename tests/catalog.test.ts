@@ -68,6 +68,61 @@ describe("filtrarProductos", () => {
     expect(filtrarProductos(ps, "Maquillajes", "Labios")).toHaveLength(1);
     expect(filtrarProductos(ps, "Maquillajes", "Rostro")).toHaveLength(0);
   });
+
+  it("busqueda filtra por nombre, case-insensitive", () => {
+    const rs = [
+      producto({ nombre: "Rhode Lip Tint" }),
+      producto({ nombre: "Serum Vitamina C" }),
+    ];
+    expect(filtrarProductos(rs, null, null, false, "rhode")).toHaveLength(1);
+    expect(filtrarProductos(rs, null, null, false, "RHODE")).toHaveLength(1);
+  });
+
+  it("busqueda filtra por marca y es null-safe", () => {
+    const rs = [producto({ marca: "Rhode" }), producto({ marca: null })];
+    expect(filtrarProductos(rs, null, null, false, "rhode")).toHaveLength(1);
+  });
+
+  it("busqueda vacia o solo espacios no filtra", () => {
+    const rs = [producto(), producto()];
+    expect(filtrarProductos(rs, null, null, false, "")).toHaveLength(2);
+    expect(filtrarProductos(rs, null, null, false, "   ")).toHaveLength(2);
+    expect(filtrarProductos(rs, null, null, false, null)).toHaveLength(2);
+  });
+
+  it("precioMin excluye los mas baratos", () => {
+    const rs = [producto({ precio: 5000 }), producto({ precio: 15000 })];
+    expect(filtrarProductos(rs, null, null, false, null, 10000)).toHaveLength(1);
+  });
+
+  it("precioMax excluye los mas caros", () => {
+    const rs = [producto({ precio: 5000 }), producto({ precio: 15000 })];
+    expect(
+      filtrarProductos(rs, null, null, false, null, null, 10000)
+    ).toHaveLength(1);
+  });
+
+  it("precioMin y precioMax forman un rango", () => {
+    const rs = [
+      producto({ precio: 4000 }),
+      producto({ precio: 8000 }),
+      producto({ precio: 20000 }),
+    ];
+    expect(
+      filtrarProductos(rs, null, null, false, null, 5000, 15000)
+    ).toHaveLength(1);
+  });
+
+  it("combina busqueda, precio y categoria con AND", () => {
+    const rs = [
+      producto({ categoria: "Maquillajes", nombre: "Rhode Blush", precio: 12000 }),
+      producto({ categoria: "Maquillajes", nombre: "Rhode Blush", precio: 30000 }),
+      producto({ categoria: "Skincare", nombre: "Rhode Serum", precio: 12000 }),
+    ];
+    expect(
+      filtrarProductos(rs, "Maquillajes", null, false, "rhode", 10000, 20000)
+    ).toHaveLength(1);
+  });
 });
 
 describe("productosPorEncargo", () => {
