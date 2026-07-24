@@ -82,10 +82,13 @@ export default function Navbar() {
               href={config.instagram}
               target="_blank"
               rel="noopener noreferrer"
-              aria-label="Instagram"
-              className="block text-neutral-700 transition-colors hover:text-rosea-500"
+              aria-label="Instagram: @roseabeautyskin"
+              className="group flex items-center overflow-hidden text-neutral-700 transition-colors hover:text-rosea-500"
             >
               <InstagramIcon />
+              <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-out group-hover:max-w-[140px] group-hover:pl-2 group-hover:opacity-100">
+                @roseabeautyskin
+              </span>
             </a>
           </li>
         </ul>
