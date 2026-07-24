@@ -33,6 +33,24 @@ export function filtrarProductos(
   );
 }
 
+// Paso de la barra de precio: los valores del catalogo son de decenas de
+// miles de pesos, mover de a $1 no tendria sentido.
+export const PASO_PRECIO = 1000;
+
+// Limites de la barra de precio, redondeados al paso para que los extremos
+// sean valores redondos y no el precio exacto de un producto.
+export function rangoPrecios(productos: Producto[]): {
+  piso: number;
+  tope: number;
+} {
+  if (productos.length === 0) return { piso: 0, tope: 0 };
+  const precios = productos.map((p) => p.precio);
+  return {
+    piso: Math.floor(Math.min(...precios) / PASO_PRECIO) * PASO_PRECIO,
+    tope: Math.ceil(Math.max(...precios) / PASO_PRECIO) * PASO_PRECIO,
+  };
+}
+
 export function productosPorEncargo(productos: Producto[]): Producto[] {
   return productos.filter((p) => p.estado === "Por Encargo");
 }

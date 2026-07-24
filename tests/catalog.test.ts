@@ -6,6 +6,7 @@ import {
   ordenarProductos,
   productosPorEncargo,
   productosDestacados,
+  rangoPrecios,
 } from "@/lib/catalog";
 import { conOrden } from "@/lib/orden";
 import type { Producto } from "@/lib/types";
@@ -163,6 +164,22 @@ describe("formatearPrecio", () => {
     const resultado = formatearPrecio(0);
     expect(resultado).toContain("0");
     expect(resultado).toContain("$");
+  });
+});
+
+describe("rangoPrecios", () => {
+  it("redondea el piso hacia abajo y el tope hacia arriba al paso", () => {
+    const ps = [producto({ precio: 63740 }), producto({ precio: 113980 })];
+    expect(rangoPrecios(ps)).toEqual({ piso: 63000, tope: 114000 });
+  });
+
+  it("no altera precios ya alineados al paso", () => {
+    const ps = [producto({ precio: 10000 }), producto({ precio: 50000 })];
+    expect(rangoPrecios(ps)).toEqual({ piso: 10000, tope: 50000 });
+  });
+
+  it("devuelve 0 en ambos si no hay productos", () => {
+    expect(rangoPrecios([])).toEqual({ piso: 0, tope: 0 });
   });
 });
 

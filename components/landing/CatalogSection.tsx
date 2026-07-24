@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Categoria, Producto } from "@/lib/types";
-import { filtrarProductos } from "@/lib/catalog";
+import { filtrarProductos, rangoPrecios } from "@/lib/catalog";
 import FilterBar from "./FilterBar";
 import ProductCard from "./ProductCard";
 
@@ -16,8 +16,10 @@ export default function CatalogSection({
   const [subcategoria, setSubcategoria] = useState<string | null>(null);
   const [soloDisponibles, setSoloDisponibles] = useState(false);
   const [busqueda, setBusqueda] = useState("");
-  const [precioMin, setPrecioMin] = useState("");
-  const [precioMax, setPrecioMax] = useState("");
+  // Los extremos de la barra salen del catalogo, que no cambia en runtime.
+  const { piso, tope } = rangoPrecios(productos);
+  const [precioMin, setPrecioMin] = useState(piso);
+  const [precioMax, setPrecioMax] = useState(tope);
 
   // La Navbar emite este evento al clickear Maquillajes/Skincare
   useEffect(() => {
@@ -38,8 +40,8 @@ export default function CatalogSection({
     subcategoria,
     soloDisponibles,
     busqueda,
-    precioMin === "" ? null : Number(precioMin),
-    precioMax === "" ? null : Number(precioMax)
+    precioMin,
+    precioMax
   );
 
   return (
@@ -66,9 +68,13 @@ export default function CatalogSection({
         busqueda={busqueda}
         precioMin={precioMin}
         precioMax={precioMax}
+        precioPiso={piso}
+        precioTope={tope}
         onBusqueda={setBusqueda}
-        onPrecioMin={setPrecioMin}
-        onPrecioMax={setPrecioMax}
+        onPrecio={(min, max) => {
+          setPrecioMin(min);
+          setPrecioMax(max);
+        }}
       />
 
       <motion.div
