@@ -83,10 +83,10 @@ export default function Navbar() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram: @roseabeautyskin"
-              className="group flex items-center overflow-hidden text-neutral-700 transition-colors hover:text-rosea-500"
+              className="group relative flex items-center text-neutral-700 transition-colors hover:text-rosea-500"
             >
               <InstagramIcon />
-              <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-out group-hover:max-w-[140px] group-hover:pl-2 group-hover:opacity-100">
+              <span className="absolute left-full top-1/2 ml-2 max-w-0 -translate-y-1/2 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-out group-hover:max-w-[140px] group-hover:opacity-100">
                 @roseabeautyskin
               </span>
             </a>
