@@ -81,3 +81,13 @@ export function formatearPrecio(precio: number): string {
 export function productosDestacados(productos: Producto[]): Producto[] {
   return ordenarProductos(productos.filter((p) => p.destacado));
 }
+
+// Ventana en dias para el badge "Nuevo" en las cards.
+const DIAS_PRODUCTO_NUEVO = 7;
+
+export function esProductoNuevo(producto: Producto): boolean {
+  const creado = new Date(producto.created_at).getTime();
+  if (Number.isNaN(creado)) return false;
+  const diasTranscurridos = (Date.now() - creado) / (1000 * 60 * 60 * 24);
+  return diasTranscurridos >= 0 && diasTranscurridos <= DIAS_PRODUCTO_NUEVO;
+}

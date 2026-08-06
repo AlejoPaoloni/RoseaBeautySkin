@@ -7,6 +7,7 @@ import type { Categoria } from "@/lib/types";
 import { config } from "@/lib/config";
 
 const LINKS: { label: string; categoria: Categoria | null; href: string }[] = [
+  { label: "Cómo comprar", categoria: null, href: "#como-comprar" },
   { label: "Destacados", categoria: null, href: "#destacados" },
   { label: "Maquillajes", categoria: "Maquillajes", href: "#catalogo" },
   { label: "Skin Care", categoria: "Skincare", href: "#catalogo" },

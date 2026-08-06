@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useState } from "react";
-import { formatearPrecio } from "@/lib/catalog";
+import { esProductoNuevo, formatearPrecio } from "@/lib/catalog";
 import { instagramDmUrl } from "@/lib/config";
 import { compartirProducto } from "@/lib/share";
 import type { Producto } from "@/lib/types";
@@ -89,6 +89,11 @@ export default function ProductCard({
         >
           {producto.estado}
         </span>
+        {esProductoNuevo(producto) && (
+          <span className="absolute left-2 top-2 rounded-full bg-rosea-500 px-2 py-0.5 text-[10px] font-medium text-white sm:left-3 sm:top-3 sm:px-3 sm:py-1 sm:text-xs">
+            Nuevo
+          </span>
+        )}
         <button
           type="button"
           aria-label={`Compartir ${producto.nombre}`}
