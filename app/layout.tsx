@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Jost } from "next/font/google";
+import { MotionConfig } from "framer-motion";
 import { config } from "@/lib/config";
 import "./globals.css";
 
@@ -32,7 +33,11 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" className={`${cormorant.variable} ${jost.variable}`}>
-      <body>{children}</body>
+      <body>
+        {/* "user" respeta prefers-reduced-motion del sistema para todas las
+            animaciones de framer-motion en el arbol, sin tocar cada uso. */}
+        <MotionConfig reducedMotion="user">{children}</MotionConfig>
+      </body>
     </html>
   );
 }

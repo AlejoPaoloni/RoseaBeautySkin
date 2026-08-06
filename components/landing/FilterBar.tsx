@@ -20,6 +20,7 @@ interface Props {
   onSoloDisponibles: (v: boolean) => void;
   onBusqueda: (v: string) => void;
   onPrecio: (min: number, max: number) => void;
+  onLimpiar: () => void;
 }
 
 const OPCIONES: (Categoria | null)[] = [null, "Maquillajes", "Skincare"];
@@ -42,7 +43,16 @@ export default function FilterBar({
   onSoloDisponibles,
   onBusqueda,
   onPrecio,
+  onLimpiar,
 }: Props) {
+  const hayFiltrosActivos =
+    categoria !== null ||
+    subcategoria !== null ||
+    busqueda !== "" ||
+    soloDisponibles ||
+    precioMin !== precioPiso ||
+    precioMax !== precioTope;
+
   return (
     <div className="mt-8 flex flex-col items-center gap-4">
       <div className="flex flex-wrap items-center justify-center gap-2">
@@ -99,7 +109,7 @@ export default function FilterBar({
         onChange={(e) => onBusqueda(e.target.value)}
         placeholder="Buscar por nombre o marca..."
         aria-label="Buscar productos por nombre o marca"
-        className="w-full max-w-xs rounded-full bg-white px-5 py-2 text-sm text-neutral-600 ring-1 ring-rosea-200 transition-shadow placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-rosea-400 sm:max-w-sm"
+        className="w-full max-w-xs rounded-full bg-white px-5 py-2 text-sm text-neutral-600 ring-1 ring-rosea-200 transition-shadow placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-rosea-400 sm:max-w-sm"
       />
 
       <PriceRange
@@ -127,6 +137,21 @@ export default function FilterBar({
         />
         Solo disponibles
       </button>
+
+      <AnimatePresence>
+        {hayFiltrosActivos && (
+          <motion.button
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2 }}
+            onClick={onLimpiar}
+            className="text-xs font-medium text-rosea-500 underline-offset-2 hover:underline"
+          >
+            Limpiar filtros
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -49,7 +49,7 @@ export default function Footer() {
           </svg>
           Rosario, Santa Fe - Argentina.
         </p>
-        <p className="text-xs text-neutral-400">
+        <p className="text-xs text-neutral-500">
           © {new Date().getFullYear()} {config.marca}. Todos los derechos
           reservados.
         </p>

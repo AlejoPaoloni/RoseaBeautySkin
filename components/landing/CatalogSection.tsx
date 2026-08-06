@@ -9,8 +9,12 @@ import ProductCard from "./ProductCard";
 
 export default function CatalogSection({
   productos,
+  huboError = false,
 }: {
   productos: Producto[];
+  // true si la carga desde Supabase fallo: el mensaje de "sin resultados"
+  // no debe confundirse con "estos filtros no matchean nada".
+  huboError?: boolean;
 }) {
   const [categoria, setCategoria] = useState<Categoria | null>(null);
   const [subcategoria, setSubcategoria] = useState<string | null>(null);
@@ -39,6 +43,15 @@ export default function CatalogSection({
     window.addEventListener("rosea:set-filter", onSetFilter);
     return () => window.removeEventListener("rosea:set-filter", onSetFilter);
   }, []);
+
+  function limpiarFiltros() {
+    setCategoria(null);
+    setSubcategoria(null);
+    setSoloDisponibles(false);
+    setBusqueda("");
+    setPrecioMin(piso);
+    setPrecioMax(tope);
+  }
 
   const visibles = filtrarProductos(
     productos,
@@ -81,6 +94,7 @@ export default function CatalogSection({
           setPrecioMin(min);
           setPrecioMax(max);
         }}
+        onLimpiar={limpiarFiltros}
       />
 
       <motion.div
@@ -94,8 +108,14 @@ export default function CatalogSection({
         </AnimatePresence>
       </motion.div>
 
-      {visibles.length === 0 && (
-        <p className="mt-10 text-center text-neutral-400">
+      {visibles.length === 0 && huboError && (
+        <p className="mt-10 text-center text-neutral-500">
+          No pudimos cargar el catálogo en este momento. Volvé a intentar en
+          unos minutos.
+        </p>
+      )}
+      {visibles.length === 0 && !huboError && (
+        <p className="mt-10 text-center text-neutral-500">
           No encontramos productos con estos filtros. Probá ajustar la búsqueda,
           el precio o la categoría.
         </p>
