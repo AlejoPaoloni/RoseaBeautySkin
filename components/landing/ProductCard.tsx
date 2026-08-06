@@ -76,9 +76,9 @@ export default function ProductCard({
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
               unoptimized={producto.imagen_url.includes("sephora.com")}
               onLoad={() => setImagenCargada(true)}
-              className={`object-cover transition-[opacity,transform] duration-500 ${
+              className={`object-cover transition-[opacity,transform] duration-700 ease-out ${
                 imagenCargada ? "opacity-100" : "opacity-0"
-              } ${estatico ? "" : "group-hover:scale-105"} ${
+              } ${estatico ? "" : "group-hover:scale-[1.03]"} ${
                 producto.estado === "Sin stock" ? "grayscale-[75%]" : ""
               }`}
             />
