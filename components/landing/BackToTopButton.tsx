@@ -21,8 +21,15 @@ export default function BackToTopButton() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 8 }}
           transition={{ duration: 0.2 }}
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          aria-label="Volver arriba"
+          onClick={() => {
+            const catalogo = document.getElementById("catalogo");
+            if (!catalogo) return;
+            // Offset para que el titulo no quede tapado por el navbar fijo.
+            const y =
+              catalogo.getBoundingClientRect().top + window.scrollY - 80;
+            window.scrollTo({ top: y, behavior: "smooth" });
+          }}
+          aria-label="Volver al catálogo"
           // Esquina opuesta al boton de Instagram para no superponerse.
           className="fixed bottom-5 left-5 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-white text-rosea-500 shadow-lg ring-1 ring-rosea-100 transition-transform duration-200 hover:scale-110 md:bottom-8 md:left-8"
         >
