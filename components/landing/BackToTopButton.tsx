@@ -7,7 +7,14 @@ export default function BackToTopButton() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setVisible(window.scrollY > 600);
+    function onScroll() {
+      const catalogo = document.getElementById("catalogo");
+      if (!catalogo) return setVisible(false);
+      const rect = catalogo.getBoundingClientRect();
+      // Visible mientras la seccion catalogo esta "debajo" del navbar: su
+      // top ya lo cruzo pero su bottom todavia no.
+      setVisible(rect.top <= 80 && rect.bottom > 80);
+    }
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
