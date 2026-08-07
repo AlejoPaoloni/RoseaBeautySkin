@@ -53,8 +53,8 @@ export default function Hero() {
 
       {/* Indicador de scroll */}
       <motion.a
-        href="#destacados"
-        aria-label="Ir a productos destacados"
+        href="#como-comprar"
+        aria-label="Ir a cómo comprar"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.2 }}

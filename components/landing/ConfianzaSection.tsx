@@ -289,7 +289,7 @@ export default function ConfianzaSection() {
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="relative mx-auto max-w-[320px] md:max-w-none"
+        className="relative mx-auto max-w-[420px] md:max-w-none"
       >
         <Paleta geo={GEO_ALTA} className="w-full md:hidden" />
         <Paleta geo={GEO_ANCHA} className="hidden w-full md:block" />
@@ -299,7 +299,7 @@ export default function ConfianzaSection() {
             viewBox) asi que el texto va mas chico ahi, y crece de nuevo
             desde md: en adelante. */}
         <div className="absolute left-[9.4%] top-[7.9%] flex h-[37.3%] w-[81.2%] flex-col items-center justify-center px-3 text-center md:bottom-0 md:left-[7.5%] md:top-0 md:h-full md:w-[39%]">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rosea-50 text-rosea-700 ring-1 ring-rosea-200/70 md:h-10 md:w-10">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-rosea-50 text-rosea-700 ring-1 ring-rosea-200/70 md:h-10 md:w-10">
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -307,16 +307,16 @@ export default function ConfianzaSection() {
               strokeWidth={1.8}
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="h-4 w-4 md:h-5 md:w-5"
+              className="h-[18px] w-[18px] md:h-5 md:w-5"
             >
               <path d="M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11Z" />
               <path d="m9 12 2 2 4-4" />
             </svg>
           </div>
-          <h2 className="mt-1.5 font-serif text-sm text-rosea-700 md:mt-3 md:text-lg lg:text-xl">
+          <h2 className="mt-1.5 font-serif text-base text-rosea-700 md:mt-3 md:text-lg lg:text-xl">
             Productos 100% originales
           </h2>
-          <p className="mt-1 text-[10px] leading-snug text-neutral-600 md:mt-2 md:text-xs lg:text-sm">
+          <p className="mt-1 text-xs leading-snug text-neutral-600 md:mt-2 md:text-xs lg:text-sm">
             Importamos directo de 🇺🇸. Nada de réplicas: cada producto llega
             sellado, en su empaque original.
           </p>
