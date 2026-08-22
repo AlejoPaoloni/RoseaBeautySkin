@@ -120,13 +120,16 @@ export default function Hero() {
       atributo al hidratar. Sin coreografia no hace falta recorrido, asi que el
       hero vuelve a medir una sola pantalla.
 
-      Mobile mide bastante menos que desktop (160svh vs 230svh): en celular se
-      scrollea con flicks cortos, no con un gesto continuo. Con 210svh (mas de
-      2 pantallas solo para el hero) alcanza con que la inercia de un flick se
-      frene a mitad de la coreografia -algo comun, el scroll "para" solo- para
-      que quede una composicion a medio resolver que se ve rota, aunque el
-      usuario sienta que ya termino de scrollear. Acortar el recorrido baja
-      las chances de que eso pase.
+      Mobile mide bastante menos que desktop (160svh vs 230svh) para que la
+      coreografia entre en un gesto de scroll corto: en celular se scrollea con
+      flicks, no con un movimiento continuo, y 2+ pantallas solo de hero se
+      hacen largas.
+
+      Ojo con el historial: este 160svh salio de diagnosticar mal un reporte de
+      "se ve roto en mobile". La causa real de eso era otra -productos
+      recortados por el compositor de Safari, ver ProductoFlotante- y se
+      arreglo aparte. Acortar el recorrido no arreglaba nada; se deja igual
+      porque el ritmo quedo mejor, no porque resuelva un bug.
     */
     <section
       id="inicio"

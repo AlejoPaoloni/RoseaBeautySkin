@@ -93,9 +93,30 @@ export default function ProductoFlotante({
   // hasta haber arrancado.
   const opacidadSalida = useTransform(t, [0, 0.12], [0, 1]);
 
+  // El centrado sobre (pose.x, pose.y) se hace ACA, en el elemento mas externo,
+  // y no con un translate en el <img>.
+  //
+  // Bug que esto resuelve (visto en Safari iOS, no reproducible en desktop):
+  // si el centrado vive en el <img>, la mitad del producto queda dibujada
+  // fuera de la caja de layout de sus contenedores. Cualquier ancestro que
+  // arme una capa compositada -aca hay varios: `opacity` < 1 por profundidad,
+  // el `perspective` del escenario, los propios transforms- la recorta a esa
+  // caja, ignorando el overflow del transform. Resultado: productos cortados
+  // con linea recta justo por izquierda y arriba, las dos direcciones del
+  // translate. El unico que se salvaba era soft-pinch-blush, el unico con
+  // profundidad 0 (opacity exactamente 1, sin capa propia).
+  //
+  // Centrando desde afuera, cada caja coincide con la imagen y no hay nada
+  // que sobresalga que se pueda recortar.
   const intensidad = 1 - profundidad * 0.55;
-  const px = useTransform(parallaxX, (v) => v * intensidad);
-  const py = useTransform(parallaxY, (v) => v * intensidad);
+  const px = useTransform(
+    parallaxX,
+    (v) => `calc(-50% + ${v * intensidad}px)`
+  );
+  const py = useTransform(
+    parallaxY,
+    (v) => `calc(-50% + ${v * intensidad}px)`
+  );
 
   // Desenfoque casi homeopatico: apenas despega el fondo del frente. Con mas
   // que esto los productos leen fuera de foco y baratos, no lejanos. En mobile
@@ -117,6 +138,10 @@ export default function ProductoFlotante({
         opacity: 1 - profundidad * 0.12,
       }}
     >
+      {/* Los transforms pivotean en el centro de la imagen. Antes era "0 0"
+          porque el <img> estaba corrido -50%/-50% y ese origen caia, de
+          casualidad, justo en su centro visual. Ahora que la caja YA esta
+          centrada sobre la pose, el centro se pide explicito. */}
       <motion.div
         style={{
           x,
@@ -125,11 +150,16 @@ export default function ProductoFlotante({
           rotate,
           rotateY,
           opacity: opacidadSalida,
-          transformOrigin: "0 0",
+          transformOrigin: "50% 50%",
         }}
       >
+        {/* Aire alrededor de la imagen para que la drop-shadow tampoco quede
+            fuera de la caja: la sombra mas larga (desktop: offset 9/15 + blur
+            18) llega a ~33px. Al ser simetrico no mueve el centro, asi que el
+            centrado de arriba sigue valiendo. */}
         <motion.div
-          style={{ transformOrigin: "0 0" }}
+          className="p-9"
+          style={{ transformOrigin: "50% 50%" }}
           animate={
             reducido
               ? undefined
@@ -153,7 +183,7 @@ export default function ProductoFlotante({
             width={producto.ancho}
             height={producto.alto}
             decoding="async"
-            className="block max-w-none -translate-x-1/2 -translate-y-1/2"
+            className="block max-w-none"
             style={{
               height: "var(--alto-producto)",
               width: "auto",
