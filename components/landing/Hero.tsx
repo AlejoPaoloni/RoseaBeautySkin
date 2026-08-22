@@ -119,11 +119,19 @@ export default function Hero() {
       HTML del servidor y el del cliente no coincidirian y React no parchea ese
       atributo al hidratar. Sin coreografia no hace falta recorrido, asi que el
       hero vuelve a medir una sola pantalla.
+
+      Mobile mide bastante menos que desktop (160svh vs 230svh): en celular se
+      scrollea con flicks cortos, no con un gesto continuo. Con 210svh (mas de
+      2 pantallas solo para el hero) alcanza con que la inercia de un flick se
+      frene a mitad de la coreografia -algo comun, el scroll "para" solo- para
+      que quede una composicion a medio resolver que se ve rota, aunque el
+      usuario sienta que ya termino de scrollear. Acortar el recorrido baja
+      las chances de que eso pase.
     */
     <section
       id="inicio"
       ref={referencia}
-      className="relative h-[210svh] bg-white motion-reduce:h-svh md:h-[230svh] md:motion-reduce:h-svh"
+      className="relative h-[160svh] bg-white motion-reduce:h-svh md:h-[230svh] md:motion-reduce:h-svh"
     >
       <div
         onPointerMove={moverPuntero}
