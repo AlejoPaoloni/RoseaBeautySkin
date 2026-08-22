@@ -69,9 +69,6 @@ export function BolsaAtras({ className = "" }: { className?: string }) {
         <g stroke="#a8756b" strokeOpacity="0.4" strokeWidth="2">
           <path d="M166 120 C 165 58, 224 58, 223 126" />
         </g>
-        <g stroke="#ffffff" strokeOpacity="0.55" strokeWidth="1.6">
-          <path d="M168 112 C 168 78, 178 62, 194 58" />
-        </g>
       </g>
 
       {/* Interior visible: entre el canto trasero (alto) y el labio frontal */}
@@ -176,9 +173,6 @@ export function BolsaAdelante({ className = "" }: { className?: string }) {
           </g>
           <g stroke="#a8756b" strokeOpacity="0.4" strokeWidth="2">
             <path d="M123 158 C 122 84, 187 84, 186 154" />
-          </g>
-          <g stroke="#ffffff" strokeOpacity="0.6" strokeWidth="1.8">
-            <path d="M125 146 C 125 106, 136 88, 152 84" />
           </g>
         </g>
 
