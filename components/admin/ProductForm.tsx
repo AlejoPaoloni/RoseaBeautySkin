@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Categoria, Estado, Producto, Tono } from "@/lib/types";
 import { CATEGORIAS, ESTADOS, SUBCATEGORIAS } from "@/lib/types";
 import { actualizarProducto, crearProducto, subirImagen } from "@/lib/db";
+import { formatearPrecio } from "@/lib/catalog";
 import { comprimirImagen } from "@/lib/imagen";
 
 interface Props {
@@ -20,6 +21,15 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
   );
   const [precio, setPrecio] = useState(
     producto ? String(producto.precio) : ""
+  );
+  const [costo, setCosto] = useState(
+    producto?.costo != null ? String(producto.costo) : ""
+  );
+  const [stock, setStock] = useState(
+    producto?.stock != null ? String(producto.stock) : ""
+  );
+  const [stockMinimo, setStockMinimo] = useState(
+    String(producto?.stock_minimo ?? 2)
   );
   const [categoria, setCategoria] = useState<Categoria>(
     producto?.categoria ?? "Maquillajes"
@@ -38,6 +48,16 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
   );
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Feedback en vivo del margen mientras se tipea precio y costo.
+  const margen =
+    precio.trim() === "" || costo.trim() === ""
+      ? null
+      : Number(precio) - Number(costo);
+  const margenPct =
+    margen === null || Number(precio) === 0
+      ? 0
+      : Math.round((margen / Number(precio)) * 100);
 
   function cambiarCategoria(c: Categoria) {
     setCategoria(c);
@@ -72,6 +92,30 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
       setError("El precio debe ser un número entero mayor o igual a 0");
       return;
     }
+    // El costo es opcional: sin él el producto igual se vende, solo que la
+    // venta no puede calcular ganancia.
+    const costoNumero = costo.trim() === "" ? null : Number(costo);
+    if (
+      costoNumero !== null &&
+      (!Number.isInteger(costoNumero) || costoNumero < 0)
+    ) {
+      setError("El costo debe ser un número entero mayor o igual a 0");
+      return;
+    }
+    // Stock vacío = ese producto no lleva control de unidades.
+    const stockNumero = stock.trim() === "" ? null : Number(stock);
+    if (
+      stockNumero !== null &&
+      (!Number.isInteger(stockNumero) || stockNumero < 0)
+    ) {
+      setError("El stock debe ser un número entero mayor o igual a 0");
+      return;
+    }
+    const minimoNumero = Number(stockMinimo || 0);
+    if (!Number.isInteger(minimoNumero) || minimoNumero < 0) {
+      setError("El aviso de stock bajo debe ser un número entero");
+      return;
+    }
     setGuardando(true);
     setError(null);
     try {
@@ -92,6 +136,9 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
         subcategoria,
         estado,
         precio: precioNumero,
+        costo: costoNumero,
+        stock: stockNumero,
+        stock_minimo: minimoNumero,
         destacado,
         tonos: tonosLimpios.length > 0 ? tonosLimpios : null,
       };
@@ -147,18 +194,67 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
           />
         </label>
 
-        <label className="mt-4 block text-sm text-neutral-600">
-          Precio (ARS) *
-          <input
-            type="number"
-            min={0}
-            step={1}
-            required
-            value={precio}
-            onChange={(e) => setPrecio(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-rosea-300"
-          />
-        </label>
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <label className="block text-sm text-neutral-600">
+            Precio (ARS) *
+            <input
+              type="number"
+              min={0}
+              step={1}
+              required
+              value={precio}
+              onChange={(e) => setPrecio(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-rosea-300"
+            />
+          </label>
+          <label className="block text-sm text-neutral-600">
+            Costo (ARS)
+            <input
+              type="number"
+              min={0}
+              step={1}
+              value={costo}
+              onChange={(e) => setCosto(e.target.value)}
+              placeholder="Lo que te salió"
+              className="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-rosea-300"
+            />
+          </label>
+        </div>
+        <p className="mt-1 text-xs text-neutral-400">
+          {margen === null
+            ? "Cargá el costo para ver la ganancia por unidad en finanzas."
+            : `Ganás ${formatearPrecio(margen)} por unidad (${margenPct}% del precio).`}
+        </p>
+
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <label className="block text-sm text-neutral-600">
+            Stock (unidades)
+            <input
+              type="number"
+              min={0}
+              step={1}
+              value={stock}
+              onChange={(e) => setStock(e.target.value)}
+              placeholder="Vacío = no controlar"
+              className="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-rosea-300"
+            />
+          </label>
+          <label className="block text-sm text-neutral-600">
+            Avisar cuando queden
+            <input
+              type="number"
+              min={0}
+              step={1}
+              value={stockMinimo}
+              onChange={(e) => setStockMinimo(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-rosea-300"
+            />
+          </label>
+        </div>
+        <p className="mt-1 text-xs text-neutral-400">
+          Cada venta descuenta unidades sola. Dejalo vacío en los productos por
+          encargo, que no tenés en mano.
+        </p>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
           <label className="block text-sm text-neutral-600">
