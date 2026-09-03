@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
 import type { Estado, Producto } from "@/lib/types";
 import { CATEGORIAS } from "@/lib/types";
 import type { Categoria } from "@/lib/types";
@@ -14,7 +12,6 @@ import {
   guardarOrden,
 } from "@/lib/db";
 import { conOrden } from "@/lib/orden";
-import { createClient } from "@/lib/supabase/client";
 import ProductForm from "@/components/admin/ProductForm";
 import SortableRow from "@/components/admin/SortableRow";
 import {
@@ -29,7 +26,6 @@ import {
 } from "@dnd-kit/sortable";
 
 export default function AdminPage() {
-  const router = useRouter();
   const [productos, setProductos] = useState<Producto[]>([]);
   const [cargando, setCargando] = useState(true);
   const [editando, setEditando] = useState<Producto | null>(null);
@@ -113,43 +109,19 @@ export default function AdminPage() {
     };
   }
 
-  async function salir() {
-    await createClient().auth.signOut();
-    router.push("/admin/login");
-    router.refresh();
-  }
-
   return (
     <div className="min-h-screen bg-rosea-50/50">
       <header className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-rosea-100 bg-white px-6 py-3">
-        <div className="flex items-center gap-3">
-          <Image src="/brand/monogram.svg" alt="RB" width={40} height={30} />
-          <h1 className="font-serif text-xl">Panel Admin</h1>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => {
-              setEditando(null);
-              setFormAbierto(true);
-            }}
-            className="rounded-full bg-rosea-400 px-4 py-2 text-sm text-white hover:bg-rosea-500"
-          >
-            + Nuevo producto
-          </button>
-          <a
-            href="/"
-            target="_blank"
-            className="rounded-full px-4 py-2 text-sm text-neutral-500 ring-1 ring-neutral-200 hover:bg-neutral-50"
-          >
-            Ver landing
-          </a>
-          <button
-            onClick={salir}
-            className="rounded-full px-4 py-2 text-sm text-neutral-500 ring-1 ring-neutral-200 hover:bg-neutral-50"
-          >
-            Salir
-          </button>
-        </div>
+        <h1 className="font-serif text-xl">Productos</h1>
+        <button
+          onClick={() => {
+            setEditando(null);
+            setFormAbierto(true);
+          }}
+          className="rounded-full bg-rosea-400 px-4 py-2 text-sm text-white hover:bg-rosea-500"
+        >
+          + Nuevo producto
+        </button>
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-8">

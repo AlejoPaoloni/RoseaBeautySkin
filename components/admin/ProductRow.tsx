@@ -4,6 +4,7 @@ import Image from "next/image";
 import type { Estado, Producto } from "@/lib/types";
 import { ESTADOS } from "@/lib/types";
 import { formatearPrecio } from "@/lib/catalog";
+import { stockBajo } from "@/lib/gestion";
 
 interface Props {
   producto: Producto;
@@ -66,6 +67,15 @@ export default function ProductRow({
             <span className="text-xs text-rosea-600">
               {formatearPrecio(producto.precio)}
             </span>
+            {producto.stock !== null && (
+              <span
+                className={`text-xs ${
+                  stockBajo(producto) ? "text-red-600" : "text-neutral-400"
+                }`}
+              >
+                {producto.stock} en stock
+              </span>
+            )}
             {producto.tonos && producto.tonos.length > 0 && (
               <div className="flex items-center gap-0.5">
                 {producto.tonos.map((t) => (
