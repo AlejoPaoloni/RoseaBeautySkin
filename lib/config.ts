@@ -9,7 +9,7 @@ export const config = {
   instagram: "https://instagram.com/roseabeautyskin",
   instagramUsuario: "roseabeautyskin",
   mensajeConsulta: "Hola, tengo una consulta",
-  email: "contacto@roseabeauty.com",
+  email: "roseabeautyskin@gmail.com",
   notaPorEncargo:
     "Encargá tus favoritos con un 50% de seña. Llegan con nuestro próximo pedido.",
 };

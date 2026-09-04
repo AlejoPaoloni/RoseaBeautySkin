@@ -7,6 +7,7 @@ import Footer from "@/components/landing/Footer";
 import Hero from "@/components/landing/Hero";
 import InstagramButton from "@/components/landing/InstagramButton";
 import Navbar from "@/components/landing/Navbar";
+import OrganizationJsonLd from "@/components/landing/OrganizationJsonLd";
 import PorEncargoSection from "@/components/landing/PorEncargoSection";
 import ProductosJsonLd from "@/components/landing/ProductosJsonLd";
 import { obtenerProductos } from "@/lib/supabase/server";
@@ -18,6 +19,7 @@ export default async function Home() {
 
   return (
     <main>
+      <OrganizationJsonLd />
       <ProductosJsonLd productos={productos} />
       <Navbar />
       <Hero />
