@@ -1,8 +1,8 @@
 /**
  * Sincroniza las finanzas de Rosea Beauty (Supabase) hacia esta hoja de
  * calculo. La fuente de verdad sigue siendo el dashboard: este script solo
- * copia. Cada corrida reescribe las pestanas enteras, asi que no hay filas
- * duplicadas ni estado que mantener.
+ * copia. Cada corrida reescribe las pestanas enteras (contenido y estilos),
+ * asi que no hay filas duplicadas ni drift visual entre corridas.
  *
  * Instalar:
  *   1. En la Google Sheet: Extensiones > Apps Script, pegar este archivo.
@@ -18,9 +18,37 @@
  * de RLS siguen valiendo. Conviene crear un usuario aparte solo para esto.
  */
 
+var PESTANA_PANEL = "Panel";
 var PESTANA_VENTAS = "Ventas";
 var PESTANA_GASTOS = "Gastos";
 var PESTANA_RESUMEN = "Resumen mensual";
+
+// Paleta de marca (misma escala que app/globals.css: --color-rosea-*).
+// Para el grafico de 2 series se reutilizan #c1554a / #4a7fb5 en vez de dos
+// tonos rosea: los tonos de marca tienen muy poco croma entre si y fallaban
+// el chequeo de daltonismo del dashboard web (ver GraficoEvolucion.tsx). El
+// resto de la hoja — encabezados, tarjetas, bordes — si usa la paleta rosea.
+var COLOR = {
+  fondo: "#faf1ef", // rosea-50
+  claro: "#edc7c0", // rosea-100
+  medio: "#d5998f", // rosea-300
+  acento: "#bd7c72", // rosea-500
+  oscuro: "#8f5a52", // rosea-700
+  texto: "#262626",
+  textoSuave: "#8a8a8a",
+  blanco: "#ffffff",
+  ventas: "#c1554a",
+  gastos: "#4a7fb5",
+  positivo: "#2e7d4f",
+  negativo: "#c0392b",
+};
+
+var FUENTE = "Jost";
+
+var MESES_ES = [
+  "enero", "febrero", "marzo", "abril", "mayo", "junio",
+  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+];
 
 function sincronizar() {
   var config = leerConfig();
@@ -37,15 +65,16 @@ function sincronizar() {
     "/rest/v1/gastos?select=*&order=fecha.desc"
   );
 
-  escribir(PESTANA_VENTAS, filasVentas(ventas));
-  escribir(PESTANA_GASTOS, filasGastos(gastos));
-  escribir(PESTANA_RESUMEN, filasResumen(ventas, gastos));
+  // Un solo calculo mensual, reusado por la tabla de Resumen y por las
+  // tarjetas + grafico del Panel: evita que las dos vistas puedan divergir.
+  var mesesAsc = calcularResumenMensual(ventas, gastos);
 
-  SpreadsheetApp.getActiveSpreadsheet().rename(
-    "Rosea Beauty · Finanzas (actualizado " +
-      Utilities.formatDate(new Date(), "America/Argentina/Buenos_Aires", "dd/MM HH:mm") +
-      ")"
-  );
+  escribirVentas(ventas);
+  escribirGastos(gastos);
+  escribirResumenMensual(mesesAsc);
+  escribirPanel(mesesAsc);
+  ordenarPestanas();
+  renombrarLibro();
 }
 
 function instalarTrigger() {
@@ -58,11 +87,19 @@ function instalarTrigger() {
 
 function leerConfig() {
   var props = PropertiesService.getScriptProperties();
+  // trim(): pegar en el campo de Propiedades del script suele colar un
+  // espacio o salto de linea invisible al final, y eso rompe el login sin
+  // ningun aviso claro (Supabase responde "invalid_credentials" igual que
+  // si la contraseña estuviera mal).
+  function limpio(clave) {
+    var valor = props.getProperty(clave);
+    return valor ? valor.trim() : valor;
+  }
   var config = {
-    url: props.getProperty("SUPABASE_URL"),
-    anon: props.getProperty("SUPABASE_ANON_KEY"),
-    email: props.getProperty("SUPABASE_EMAIL"),
-    password: props.getProperty("SUPABASE_PASSWORD"),
+    url: limpio("SUPABASE_URL"),
+    anon: limpio("SUPABASE_ANON_KEY"),
+    email: limpio("SUPABASE_EMAIL"),
+    password: limpio("SUPABASE_PASSWORD"),
   };
   for (var clave in config) {
     if (!config[clave]) {
@@ -109,55 +146,21 @@ function consultar(config, token, ruta) {
   return JSON.parse(respuesta.getContentText());
 }
 
-// Una fila por renglon de venta: asi la hoja sirve para tabla dinamica.
-function filasVentas(ventas) {
-  var filas = [
-    [
-      "Fecha",
-      "Clienta",
-      "Canal",
-      "Producto",
-      "Cantidad",
-      "Precio unitario",
-      "Total renglón",
-      "Costo unitario",
-      "Ganancia renglón",
-      "Nota",
-      "ID venta",
-    ],
-  ];
-  ventas.forEach(function (venta) {
-    (venta.venta_items || []).forEach(function (item) {
-      filas.push([
-        venta.fecha,
-        venta.cliente || "",
-        venta.canal,
-        item.nombre,
-        item.cantidad,
-        item.precio_unitario,
-        item.precio_unitario * item.cantidad,
-        item.costo_unitario,
-        (item.precio_unitario - item.costo_unitario) * item.cantidad,
-        venta.nota || "",
-        venta.id,
-      ]);
-    });
-  });
-  return filas;
+function nombreMes(mes) {
+  var partes = mes.split("-");
+  return MESES_ES[Number(partes[1]) - 1] + " " + partes[0];
 }
 
-function filasGastos(gastos) {
-  var filas = [["Fecha", "Categoría", "Descripción", "Monto"]];
-  gastos.forEach(function (g) {
-    filas.push([g.fecha, g.categoria, g.descripcion, g.monto]);
-  });
-  return filas;
+function mesCorto(mes) {
+  return MESES_ES[Number(mes.split("-")[1]) - 1].slice(0, 3);
 }
 
 // Mismo criterio que el dashboard: caja resta todo lo que salio; ganancia
 // resta el costo de lo vendido mas los gastos que no son compra de stock,
-// para no contar la mercaderia dos veces.
-function filasResumen(ventas, gastos) {
+// para no contar la mercaderia dos veces. Devuelve los meses en orden
+// cronologico ascendente (mas viejo primero) — el orden que necesita un
+// grafico de barras leido de izquierda a derecha.
+function calcularResumenMensual(ventas, gastos) {
   var meses = {};
 
   function mesDe(fecha) {
@@ -167,6 +170,7 @@ function filasResumen(ventas, gastos) {
   function fila(mes) {
     if (!meses[mes]) {
       meses[mes] = {
+        mes: mes,
         ingresos: 0,
         unidades: 0,
         costoVendido: 0,
@@ -192,52 +196,405 @@ function filasResumen(ventas, gastos) {
     if (g.categoria === "Mercaderia") f.gastosMercaderia += g.monto;
   });
 
-  var filas = [
-    [
-      "Mes",
-      "Ventas",
-      "Unidades",
-      "Costo vendido",
-      "Gastos totales",
-      "Gastos mercadería",
-      "Gastos operativos",
-      "Resultado de caja",
-      "Ganancia (margen)",
-      "Margen %",
-    ],
-  ];
-
-  Object.keys(meses)
+  return Object.keys(meses)
     .sort()
-    .reverse()
-    .forEach(function (mes) {
+    .map(function (mes) {
       var f = meses[mes];
       var operativos = f.gastosTotal - f.gastosMercaderia;
       var ganancia = f.ingresos - f.costoVendido - operativos;
-      filas.push([
-        mes,
-        f.ingresos,
-        f.unidades,
-        f.costoVendido,
-        f.gastosTotal,
-        f.gastosMercaderia,
-        operativos,
-        f.ingresos - f.gastosTotal,
-        ganancia,
-        f.ingresos === 0 ? "" : Math.round((ganancia / f.ingresos) * 100) + "%",
-      ]);
+      return {
+        mes: mes,
+        ingresos: f.ingresos,
+        unidades: f.unidades,
+        costoVendido: f.costoVendido,
+        gastosTotal: f.gastosTotal,
+        gastosMercaderia: f.gastosMercaderia,
+        gastosOperativos: operativos,
+        resultadoCaja: f.ingresos - f.gastosTotal,
+        gananciaMargen: ganancia,
+        margenPct: f.ingresos === 0 ? null : Math.round((ganancia / f.ingresos) * 100),
+      };
     });
-
-  return filas;
 }
 
-function escribir(nombre, filas) {
-  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nombre);
-  if (!hoja) hoja = SpreadsheetApp.getActiveSpreadsheet().insertSheet(nombre);
+// --- Helpers de estilo, reusados por las 4 pestañas ---
+
+// Toma o crea la pestaña y la deja en blanco: contenido, formato Y
+// bandas/filtros/merges previos. hoja.clear() borra contenido y formato pero
+// NO bandas, filtros ni celdas combinadas — sin esto, la segunda corrida
+// tira error "ya existe una banda en ese rango" o deja merges fantasma.
+function prepararHoja(nombre) {
+  var libro = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = libro.getSheetByName(nombre);
+  if (!hoja) hoja = libro.insertSheet(nombre);
   hoja.clear();
-  if (filas.length === 0) return;
-  hoja.getRange(1, 1, filas.length, filas[0].length).setValues(filas);
-  hoja.getRange(1, 1, 1, filas[0].length).setFontWeight("bold");
+  hoja.getBandings().forEach(function (b) {
+    b.remove();
+  });
+  if (hoja.getFilter()) hoja.getFilter().remove();
+  hoja.getCharts().forEach(function (c) {
+    hoja.removeChart(c);
+  });
+  var filas = Math.max(hoja.getMaxRows(), 1);
+  var cols = Math.max(hoja.getMaxColumns(), 1);
+  hoja.getRange(1, 1, filas, cols).breakApart();
+  return hoja;
+}
+
+function estilarEncabezado(rango) {
+  rango
+    .setBackground(COLOR.oscuro)
+    .setFontColor(COLOR.blanco)
+    .setFontWeight("bold")
+    .setFontFamily(FUENTE)
+    .setVerticalAlignment("middle");
+}
+
+function formatoMoneda(rango) {
+  rango.setNumberFormat("$#,##0");
+}
+
+// Bandas alternadas en la paleta de marca en vez del gris por defecto de
+// Sheets — blanco / rosea-50, con el encabezado ya pintado por separado.
+function aplicarBandas(rango) {
+  var banda = rango.applyRowBanding(SpreadsheetApp.BandingTheme.LIGHT_GREY, true, false);
+  banda.setHeaderRowColor(COLOR.oscuro);
+  banda.setFirstRowColor(COLOR.blanco);
+  banda.setSecondRowColor(COLOR.fondo);
+}
+
+function estilarFilaTotal(rango) {
+  rango
+    .setFontWeight("bold")
+    .setFontFamily(FUENTE)
+    .setBackground(COLOR.claro)
+    .setBorder(true, null, null, null, null, null, COLOR.oscuro, SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+}
+
+// --- Ventas ---
+
+function escribirVentas(ventas) {
+  var encabezados = [
+    "Fecha", "Clienta", "Canal", "Producto", "Cantidad",
+    "Precio unitario", "Total renglón", "Costo unitario",
+    "Ganancia renglón", "Nota", "ID venta",
+  ];
+  var filas = [];
+  ventas.forEach(function (venta) {
+    (venta.venta_items || []).forEach(function (item) {
+      filas.push([
+        venta.fecha,
+        venta.cliente || "",
+        venta.canal,
+        item.nombre,
+        item.cantidad,
+        item.precio_unitario,
+        item.precio_unitario * item.cantidad,
+        item.costo_unitario,
+        (item.precio_unitario - item.costo_unitario) * item.cantidad,
+        venta.nota || "",
+        venta.id,
+      ]);
+    });
+  });
+
+  var hoja = prepararHoja(PESTANA_VENTAS);
+  var cols = encabezados.length;
+  hoja.getRange(1, 1, 1, cols).setValues([encabezados]);
+
+  if (filas.length > 0) {
+    hoja.getRange(2, 1, filas.length, cols).setValues(filas);
+
+    var totalCant = 0, totalVenta = 0, totalGanancia = 0;
+    filas.forEach(function (f) {
+      totalCant += f[4];
+      totalVenta += f[6];
+      totalGanancia += f[8];
+    });
+    var filaTotal = filas.length + 2;
+    hoja.getRange(filaTotal, 1, 1, 4).merge().setValue("TOTAL").setHorizontalAlignment("right");
+    hoja.getRange(filaTotal, 5).setValue(totalCant);
+    hoja.getRange(filaTotal, 7).setValue(totalVenta);
+    hoja.getRange(filaTotal, 9).setValue(totalGanancia);
+    estilarFilaTotal(hoja.getRange(filaTotal, 1, 1, cols));
+    formatoMoneda(hoja.getRange(filaTotal, 6, 1, 4));
+
+    formatoMoneda(hoja.getRange(2, 6, filas.length, 4));
+    // ID venta es un dato tecnico de cruce, no algo que se lea: se achica y
+    // se apaga para que no compita visualmente con las columnas que importan.
+    hoja.getRange(2, 11, filas.length, 1).setFontColor(COLOR.textoSuave).setFontSize(9);
+
+    aplicarBandas(hoja.getRange(1, 1, filas.length + 1, cols));
+    hoja.getRange(1, 1, filas.length + 1, cols).createFilter();
+  }
+
+  estilarEncabezado(hoja.getRange(1, 1, 1, cols));
+  hoja.getRange(1, 1, hoja.getMaxRows(), cols).setFontFamily(FUENTE);
   hoja.setFrozenRows(1);
-  hoja.autoResizeColumns(1, filas[0].length);
+  hoja.setFrozenColumns(1);
+  hoja.setRowHeight(1, 30);
+  hoja.autoResizeColumns(1, cols);
+  hoja.setColumnWidth(4, Math.max(hoja.getColumnWidth(4), 200)); // Producto
+  hoja.setColumnWidth(10, Math.max(hoja.getColumnWidth(10), 160)); // Nota
+}
+
+// --- Gastos ---
+
+function escribirGastos(gastos) {
+  var encabezados = ["Fecha", "Categoría", "Descripción", "Monto"];
+  var filas = gastos.map(function (g) {
+    return [g.fecha, g.categoria, g.descripcion, g.monto];
+  });
+
+  var hoja = prepararHoja(PESTANA_GASTOS);
+  var cols = encabezados.length;
+  hoja.getRange(1, 1, 1, cols).setValues([encabezados]);
+
+  if (filas.length > 0) {
+    hoja.getRange(2, 1, filas.length, cols).setValues(filas);
+
+    var totalMonto = filas.reduce(function (t, f) { return t + f[3]; }, 0);
+    var filaTotal = filas.length + 2;
+    hoja.getRange(filaTotal, 1, 1, 3).merge().setValue("TOTAL").setHorizontalAlignment("right");
+    hoja.getRange(filaTotal, 4).setValue(totalMonto);
+    estilarFilaTotal(hoja.getRange(filaTotal, 1, 1, cols));
+    formatoMoneda(hoja.getRange(filaTotal, 4));
+
+    formatoMoneda(hoja.getRange(2, 4, filas.length, 1));
+    aplicarBandas(hoja.getRange(1, 1, filas.length + 1, cols));
+    hoja.getRange(1, 1, filas.length + 1, cols).createFilter();
+  }
+
+  estilarEncabezado(hoja.getRange(1, 1, 1, cols));
+  hoja.getRange(1, 1, hoja.getMaxRows(), cols).setFontFamily(FUENTE);
+  hoja.setFrozenRows(1);
+  hoja.setRowHeight(1, 30);
+  hoja.autoResizeColumns(1, cols);
+  hoja.setColumnWidth(3, Math.max(hoja.getColumnWidth(3), 220)); // Descripción
+}
+
+// --- Resumen mensual ---
+
+function escribirResumenMensual(mesesAsc) {
+  var encabezados = [
+    "Mes", "Ventas", "Unidades", "Costo vendido", "Gastos totales",
+    "Gastos mercadería", "Gastos operativos", "Resultado de caja",
+    "Ganancia (margen)", "Margen %",
+  ];
+  // Descendente para la tabla: el mes mas reciente arriba, igual que Ventas
+  // y Gastos.
+  var desc = mesesAsc.slice().reverse();
+  var filas = desc.map(function (f) {
+    return [
+      nombreMes(f.mes), f.ingresos, f.unidades, f.costoVendido, f.gastosTotal,
+      f.gastosMercaderia, f.gastosOperativos, f.resultadoCaja, f.gananciaMargen,
+      f.margenPct === null ? "" : f.margenPct + "%",
+    ];
+  });
+
+  var hoja = prepararHoja(PESTANA_RESUMEN);
+  var cols = encabezados.length;
+  hoja.getRange(1, 1, 1, cols).setValues([encabezados]);
+
+  if (filas.length > 0) {
+    hoja.getRange(2, 1, filas.length, cols).setValues(filas);
+    formatoMoneda(hoja.getRange(2, 2, filas.length, 1));
+    formatoMoneda(hoja.getRange(2, 4, filas.length, 5));
+
+    // Meses en rojo si dieron negativo: es la fila que mas importa detectar
+    // rapido al abrir la hoja, no algo que haya que ponerse a leer numero
+    // por numero.
+    desc.forEach(function (f, i) {
+      var fila = i + 2;
+      if (f.resultadoCaja < 0) {
+        hoja.getRange(fila, 8).setFontColor(COLOR.negativo).setFontWeight("bold");
+      }
+      if (f.gananciaMargen < 0) {
+        hoja.getRange(fila, 9).setFontColor(COLOR.negativo).setFontWeight("bold");
+      }
+    });
+
+    aplicarBandas(hoja.getRange(1, 1, filas.length + 1, cols));
+    hoja.getRange(1, 1, filas.length + 1, cols).createFilter();
+  }
+
+  estilarEncabezado(hoja.getRange(1, 1, 1, cols));
+  hoja.getRange(1, 1, hoja.getMaxRows(), cols).setFontFamily(FUENTE);
+  hoja.setFrozenRows(1);
+  hoja.setRowHeight(1, 30);
+  hoja.autoResizeColumns(1, cols);
+}
+
+// --- Panel: portada con KPIs del mes y grafico de evolucion ---
+
+function escribirPanel(mesesAsc) {
+  var hoja = prepararHoja(PESTANA_PANEL);
+  var ULTIMA_COL = 8; // A..H
+
+  hoja.getRange(1, 1, hoja.getMaxRows(), ULTIMA_COL).setFontFamily(FUENTE);
+
+  // Barra de titulo.
+  hoja.getRange(1, 1, 1, ULTIMA_COL).merge();
+  hoja.getRange(1, 1)
+    .setValue("Rosea Beauty · Panel de finanzas")
+    .setFontFamily(FUENTE)
+    .setFontSize(20)
+    .setFontWeight("bold")
+    .setFontColor(COLOR.blanco)
+    .setBackground(COLOR.oscuro)
+    .setVerticalAlignment("middle")
+    .setHorizontalAlignment("left");
+  hoja.setRowHeight(1, 48);
+
+  hoja.getRange(2, 1, 1, ULTIMA_COL).merge();
+  hoja.getRange(2, 1)
+    .setValue(
+      "Actualizado " +
+        Utilities.formatDate(new Date(), "America/Argentina/Buenos_Aires", "dd/MM/yyyy HH:mm")
+    )
+    .setFontStyle("italic")
+    .setFontColor(COLOR.textoSuave)
+    .setFontSize(10);
+  hoja.setRowHeight(2, 22);
+
+  if (mesesAsc.length === 0) {
+    hoja.getRange(4, 1)
+      .setValue("Todavía no hay ventas ni gastos cargados.")
+      .setFontColor(COLOR.textoSuave);
+    hoja.setColumnWidth(1, 220);
+    return;
+  }
+
+  var actual = mesesAsc[mesesAsc.length - 1];
+  var anterior = mesesAsc.length > 1 ? mesesAsc[mesesAsc.length - 2] : null;
+
+  function variacion(nuevo, viejo) {
+    if (!viejo || viejo === 0) return null;
+    return Math.round(((nuevo - viejo) / Math.abs(viejo)) * 100);
+  }
+
+  var tarjetas = [
+    {
+      titulo: "VENTAS · " + nombreMes(actual.mes).toUpperCase(),
+      valor: actual.ingresos,
+      variacion: anterior ? variacion(actual.ingresos, anterior.ingresos) : null,
+    },
+    {
+      titulo: "GANANCIA (MARGEN)",
+      valor: actual.gananciaMargen,
+      sufijo: actual.margenPct === null ? "sin ventas todavía" : actual.margenPct + "% de lo vendido",
+    },
+    {
+      titulo: "GASTOS DEL MES",
+      valor: actual.gastosTotal,
+      variacion: anterior ? variacion(actual.gastosTotal, anterior.gastosTotal) : null,
+    },
+    {
+      titulo: "RESULTADO DE CAJA",
+      valor: actual.resultadoCaja,
+      sufijo: actual.unidades + " unidad" + (actual.unidades === 1 ? "" : "es") + " vendidas",
+    },
+  ];
+
+  // 4 tarjetas en fila, 2 columnas de ancho cada una (A-B, C-D, E-F, G-H).
+  var filaInicio = 4;
+  var altoTarjeta = 4;
+  tarjetas.forEach(function (t, i) {
+    var col = i * 2 + 1;
+    hoja.getRange(filaInicio, col, 1, 2).merge()
+      .setValue(t.titulo)
+      .setFontSize(9)
+      .setFontWeight("bold")
+      .setFontColor(COLOR.oscuro)
+      .setBackground(COLOR.fondo)
+      .setHorizontalAlignment("center");
+
+    hoja.getRange(filaInicio + 1, col, 2, 2).merge()
+      .setValue(t.valor)
+      .setNumberFormat("$#,##0")
+      .setFontSize(22)
+      .setFontWeight("bold")
+      .setFontColor(t.valor < 0 ? COLOR.negativo : COLOR.texto)
+      .setBackground(COLOR.fondo)
+      .setHorizontalAlignment("center")
+      .setVerticalAlignment("middle");
+
+    var pie = "";
+    if (t.sufijo) pie = t.sufijo;
+    else if (t.variacion !== null && t.variacion !== undefined) {
+      pie = (t.variacion >= 0 ? "▲ " : "▼ ") + Math.abs(t.variacion) + "% vs mes anterior";
+    } else {
+      pie = "sin mes anterior";
+    }
+    var celdaPie = hoja.getRange(filaInicio + 3, col, 1, 2).merge()
+      .setValue(pie)
+      .setFontSize(9)
+      .setBackground(COLOR.fondo)
+      .setHorizontalAlignment("center");
+    if (t.variacion !== null && t.variacion !== undefined) {
+      celdaPie.setFontColor(t.variacion >= 0 ? COLOR.positivo : COLOR.negativo);
+    } else {
+      celdaPie.setFontColor(COLOR.textoSuave);
+    }
+  });
+  for (var r = filaInicio; r < filaInicio + altoTarjeta; r++) hoja.setRowHeight(r, r === filaInicio + 1 ? 30 : 22);
+  hoja.getRange(filaInicio, 1, altoTarjeta, ULTIMA_COL)
+    .setBorder(true, true, true, true, true, true, COLOR.claro, SpreadsheetApp.BorderStyle.SOLID);
+
+  // Mini tabla de evolucion (hasta 6 meses, cronologico) que alimenta el
+  // grafico de abajo — a la vista, no oculta, para que tambien se pueda leer
+  // el numero exacto sin entrar a Resumen mensual.
+  var filaTabla = filaInicio + altoTarjeta + 2;
+  hoja.getRange(filaTabla, 1)
+    .setValue("Evolución (últimos meses)")
+    .setFontWeight("bold")
+    .setFontColor(COLOR.oscuro)
+    .setFontSize(12);
+
+  var ultimos = mesesAsc.slice(Math.max(mesesAsc.length - 6, 0));
+  var filaEncabezado = filaTabla + 1;
+  hoja.getRange(filaEncabezado, 1, 1, 3).setValues([["Mes", "Ventas", "Gastos"]]);
+  var datosGrafico = ultimos.map(function (f) {
+    return [mesCorto(f.mes), f.ingresos, f.gastosTotal];
+  });
+  hoja.getRange(filaEncabezado + 1, 1, datosGrafico.length, 3).setValues(datosGrafico);
+
+  var rangoTabla = hoja.getRange(filaEncabezado, 1, datosGrafico.length + 1, 3);
+  estilarEncabezado(hoja.getRange(filaEncabezado, 1, 1, 3));
+  formatoMoneda(hoja.getRange(filaEncabezado + 1, 2, datosGrafico.length, 2));
+  aplicarBandas(rangoTabla);
+
+  var grafico = hoja.newChart()
+    .setChartType(Charts.ChartType.COLUMN)
+    .addRange(rangoTabla)
+    .setNumHeaders(1)
+    .setPosition(filaTabla, 5, 0, 0)
+    .setOption("title", "Ventas y gastos por mes")
+    .setOption("titleTextStyle", { color: COLOR.oscuro, bold: true, fontName: FUENTE })
+    .setOption("colors", [COLOR.ventas, COLOR.gastos])
+    .setOption("legend", { position: "top" })
+    .setOption("backgroundColor", COLOR.blanco)
+    .setOption("width", 460)
+    .setOption("height", 260)
+    .build();
+  hoja.insertChart(grafico);
+
+  hoja.setColumnWidths(1, ULTIMA_COL, 110);
+}
+
+function ordenarPestanas() {
+  var libro = SpreadsheetApp.getActiveSpreadsheet();
+  var panel = libro.getSheetByName(PESTANA_PANEL);
+  if (panel) {
+    libro.setActiveSheet(panel);
+    libro.moveActiveSheet(1);
+  }
+}
+
+function renombrarLibro() {
+  SpreadsheetApp.getActiveSpreadsheet().rename(
+    "Rosea Beauty · Finanzas (actualizado " +
+      Utilities.formatDate(new Date(), "America/Argentina/Buenos_Aires", "dd/MM HH:mm") +
+      ")"
+  );
 }
