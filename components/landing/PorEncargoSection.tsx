@@ -23,7 +23,7 @@ export default function PorEncargoSection({
           viewport={{ once: true }}
           className="text-center font-serif text-4xl text-rosea-700 md:text-5xl"
         >
-          Productos por Encargo
+          Productos por encargo
         </motion.h2>
         <p className="mx-auto mt-3 max-w-xl text-center text-sm text-neutral-500">
           {config.notaPorEncargo}
