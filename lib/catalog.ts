@@ -28,18 +28,19 @@ export function filtrarProductos(
   const q = busqueda?.trim().toLowerCase() ?? "";
   return productos.filter(
     (p) =>
+      // Los por encargo tienen su propia seccion (PorEncargoSection) y no
+      // muestran precio: duplicarlos en la grilla del catalogo confunde mas
+      // de lo que ayuda.
+      p.estado !== "Por Encargo" &&
       (!categoria || p.categoria === categoria) &&
       (!subcategoria || p.subcategoria === subcategoria) &&
       (!soloDisponibles || p.estado === "Disponible") &&
       (!q ||
         p.nombre.toLowerCase().includes(q) ||
         (p.marca?.toLowerCase().includes(q) ?? false)) &&
-      // Los por encargo no muestran precio, asi que tampoco los filtra: si
-      // no, un rango que la clienta no puede ver los haria desaparecer.
-      (!tienePrecioPublico(p) ||
-        // == null para que 0 sea un limite valido, no "sin filtro"
-        ((precioMin == null || p.precio >= precioMin) &&
-          (precioMax == null || p.precio <= precioMax)))
+      // == null para que 0 sea un limite valido, no "sin filtro"
+      (precioMin == null || p.precio >= precioMin) &&
+      (precioMax == null || p.precio <= precioMax)
   );
 }
 

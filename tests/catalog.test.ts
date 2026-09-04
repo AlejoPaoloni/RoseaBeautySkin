@@ -67,7 +67,8 @@ describe("filtrarProductos", () => {
       producto({ estado: "Sin stock" }),
     ];
     expect(filtrarProductos(qs, null, null, true)).toHaveLength(1);
-    expect(filtrarProductos(qs, null, null, false)).toHaveLength(3);
+    // Sin el toggle: Disponible + Sin stock. Por Encargo queda afuera siempre.
+    expect(filtrarProductos(qs, null, null, false)).toHaveLength(2);
   });
   it("filtra por subcategoria", () => {
     expect(filtrarProductos(ps, "Maquillajes", "Labios")).toHaveLength(1);
@@ -118,23 +119,17 @@ describe("filtrarProductos", () => {
     ).toHaveLength(1);
   });
 
-  it("el filtro de precio no esconde los por encargo", () => {
+  it("los por encargo nunca aparecen en el catalogo, pase lo que pase el filtro", () => {
+    // Tienen su propia seccion (PorEncargoSection); duplicarlos en la
+    // grilla confunde mas de lo que ayuda, asi que quedan afuera sin
+    // importar categoria, busqueda ni rango de precio.
     const rs = [
-      producto({ precio: 5000 }),
-      // Sin precio visible: un rango que la clienta no ve no puede sacarlo.
-      producto({ precio: 999000, estado: "Por Encargo" }),
-    ];
-    const filtrados = filtrarProductos(rs, null, null, false, null, 1000, 10000);
-    expect(filtrados).toHaveLength(2);
-    expect(filtrados.some((p) => p.estado === "Por Encargo")).toBe(true);
-  });
-
-  it("los por encargo si respetan el resto de los filtros", () => {
-    const rs = [
+      producto({ precio: 5000, estado: "Por Encargo" }),
       producto({ categoria: "Skincare", subcategoria: "Skincare", estado: "Por Encargo" }),
     ];
-    expect(filtrarProductos(rs, "Maquillajes", null, false, null, 1, 2)).toHaveLength(0);
-    expect(filtrarProductos(rs, null, null, true)).toHaveLength(0);
+    expect(filtrarProductos(rs, null, null, false, null, 0, 10000)).toHaveLength(0);
+    expect(filtrarProductos(rs, "Skincare", "Skincare")).toHaveLength(0);
+    expect(filtrarProductos(rs, null, null, false, "")).toHaveLength(0);
   });
 
   it("combina busqueda, precio y categoria con AND", () => {
