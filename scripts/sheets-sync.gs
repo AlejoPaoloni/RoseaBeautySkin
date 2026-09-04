@@ -22,6 +22,10 @@ var PESTANA_PANEL = "Panel";
 var PESTANA_VENTAS = "Ventas";
 var PESTANA_GASTOS = "Gastos";
 var PESTANA_RESUMEN = "Resumen mensual";
+var PESTANA_CLIENTAS = "Clientas";
+var PESTANA_PEDIDOS = "Pedidos";
+var PESTANA_PUBLICACIONES = "Contenido";
+var PESTANA_TAREAS = "Tareas";
 
 // Paleta de marca (misma escala que app/globals.css: --color-rosea-*).
 // Para el grafico de 2 series se reutilizan #c1554a / #4a7fb5 en vez de dos
@@ -65,6 +69,37 @@ function sincronizar() {
     "/rest/v1/gastos?select=*&order=fecha.desc"
   );
 
+  // El resto de la gestion (no es finanzas, pero igual necesita backup fuera
+  // de Supabase): clientas, pedidos, contenido y tareas no tenian espejo.
+  var clientas = consultar(
+    config,
+    token,
+    "/rest/v1/clientas?select=*&order=nombre"
+  );
+  var pedidos = consultar(
+    config,
+    token,
+    "/rest/v1/pedidos?select=*,pedido_items(*)&order=fecha.desc"
+  );
+  var publicaciones = consultar(
+    config,
+    token,
+    "/rest/v1/publicaciones?select=*,publicacion_productos(producto_id)&order=fecha.desc"
+  );
+  var tareas = consultar(
+    config,
+    token,
+    "/rest/v1/tareas?select=*&order=created_at.desc"
+  );
+  // Solo para resolver nombres (cliente_id -> nombre, producto_id -> nombre):
+  // pedidos ya guarda un snapshot del nombre del producto en cada item, pero
+  // publicacion_productos y pedidos.cliente_id son solo el id.
+  var productos = consultar(
+    config,
+    token,
+    "/rest/v1/productos?select=id,nombre"
+  );
+
   // Un solo calculo mensual, reusado por la tabla de Resumen y por las
   // tarjetas + grafico del Panel: evita que las dos vistas puedan divergir.
   var mesesAsc = calcularResumenMensual(ventas, gastos);
@@ -73,6 +108,10 @@ function sincronizar() {
   escribirGastos(gastos);
   escribirResumenMensual(mesesAsc);
   escribirPanel(mesesAsc);
+  escribirClientas(clientas);
+  escribirPedidos(pedidos, clientas);
+  escribirPublicaciones(publicaciones, productos);
+  escribirTareas(tareas);
   ordenarPestanas();
   renombrarLibro();
 }
@@ -580,6 +619,195 @@ function escribirPanel(mesesAsc) {
   hoja.insertChart(grafico);
 
   hoja.setColumnWidths(1, ULTIMA_COL, 110);
+}
+
+// --- Clientas ---
+
+function escribirClientas(clientas) {
+  var encabezados = ["Nombre", "Contacto", "Nota"];
+  var filas = clientas.map(function (c) {
+    return [c.nombre, c.contacto || "", c.nota || ""];
+  });
+
+  var hoja = prepararHoja(PESTANA_CLIENTAS);
+  var cols = encabezados.length;
+  hoja.getRange(1, 1, 1, cols).setValues([encabezados]);
+
+  if (filas.length > 0) {
+    hoja.getRange(2, 1, filas.length, cols).setValues(filas);
+    aplicarBandas(hoja.getRange(1, 1, filas.length + 1, cols));
+    hoja.getRange(1, 1, filas.length + 1, cols).createFilter();
+  }
+
+  estilarEncabezado(hoja.getRange(1, 1, 1, cols));
+  hoja.getRange(1, 1, hoja.getMaxRows(), cols).setFontFamily(FUENTE);
+  hoja.setFrozenRows(1);
+  hoja.setRowHeight(1, 30);
+  hoja.autoResizeColumns(1, cols);
+  hoja.setColumnWidth(3, Math.max(hoja.getColumnWidth(3), 220)); // Nota
+}
+
+// --- Pedidos ---
+
+// Una fila por pedido (no por item, a diferencia de Ventas): la seña y el
+// saldo son datos del pedido entero, repetirlos por renglon de item
+// insinuaria que se pueden sumar y duplicaria el total.
+function escribirPedidos(pedidos, clientas) {
+  var encabezados = [
+    "Fecha", "Cliente", "Estado", "Productos", "Total estimado",
+    "Seña", "Saldo", "Nota", "ID venta vinculada",
+  ];
+
+  function nombreDe(p) {
+    if (p.cliente_id) {
+      var c = clientas.filter(function (x) { return x.id === p.cliente_id; })[0];
+      return c ? c.nombre : "Sin nombre";
+    }
+    return p.cliente_texto || "Sin nombre";
+  }
+
+  var filas = pedidos.map(function (p) {
+    var items = p.pedido_items || [];
+    var total = items.reduce(function (t, i) {
+      return t + i.precio_estimado * i.cantidad;
+    }, 0);
+    var textoItems = items
+      .map(function (i) { return i.cantidad + "× " + i.nombre; })
+      .join(", ");
+    return [
+      p.fecha,
+      nombreDe(p),
+      p.estado,
+      textoItems,
+      total,
+      p.sena,
+      Math.max(total - p.sena, 0),
+      p.nota || "",
+      p.venta_id || "",
+    ];
+  });
+
+  var hoja = prepararHoja(PESTANA_PEDIDOS);
+  var cols = encabezados.length;
+  hoja.getRange(1, 1, 1, cols).setValues([encabezados]);
+
+  if (filas.length > 0) {
+    hoja.getRange(2, 1, filas.length, cols).setValues(filas);
+    formatoMoneda(hoja.getRange(2, 5, filas.length, 3));
+    // ID venta vinculada es un dato tecnico de cruce, igual que ID venta en
+    // la pestaña Ventas: se achica para no competir con las columnas que
+    // se leen de verdad.
+    hoja.getRange(2, 9, filas.length, 1).setFontColor(COLOR.textoSuave).setFontSize(9);
+    aplicarBandas(hoja.getRange(1, 1, filas.length + 1, cols));
+    hoja.getRange(1, 1, filas.length + 1, cols).createFilter();
+  }
+
+  estilarEncabezado(hoja.getRange(1, 1, 1, cols));
+  hoja.getRange(1, 1, hoja.getMaxRows(), cols).setFontFamily(FUENTE);
+  hoja.setFrozenRows(1);
+  hoja.setRowHeight(1, 30);
+  hoja.autoResizeColumns(1, cols);
+  hoja.setColumnWidth(4, Math.max(hoja.getColumnWidth(4), 220)); // Productos
+}
+
+// --- Contenido ---
+
+function escribirPublicaciones(publicaciones, productos) {
+  var encabezados = [
+    "Fecha", "Red", "Formato", "Título", "Estado",
+    "Checklist", "Productos", "Copy", "Nota",
+  ];
+
+  function nombresProductos(pub) {
+    var ids = (pub.publicacion_productos || []).map(function (x) {
+      return x.producto_id;
+    });
+    return ids
+      .map(function (id) {
+        var p = productos.filter(function (x) { return x.id === id; })[0];
+        return p ? p.nombre : null;
+      })
+      .filter(function (n) { return n; })
+      .join(", ");
+  }
+
+  function progreso(pub) {
+    var pasos = pub.checklist || [];
+    if (pasos.length === 0) return "";
+    var hechos = pasos.filter(function (p) { return p.hecho; }).length;
+    return hechos + "/" + pasos.length;
+  }
+
+  var filas = publicaciones.map(function (p) {
+    return [
+      // Sin fecha = todavia es una idea suelta en el banco de ideas.
+      p.fecha || "Idea",
+      p.red,
+      p.formato,
+      p.titulo,
+      p.estado,
+      progreso(p),
+      nombresProductos(p),
+      p.copy || "",
+      p.nota || "",
+    ];
+  });
+
+  var hoja = prepararHoja(PESTANA_PUBLICACIONES);
+  var cols = encabezados.length;
+  hoja.getRange(1, 1, 1, cols).setValues([encabezados]);
+
+  if (filas.length > 0) {
+    hoja.getRange(2, 1, filas.length, cols).setValues(filas);
+    aplicarBandas(hoja.getRange(1, 1, filas.length + 1, cols));
+    hoja.getRange(1, 1, filas.length + 1, cols).createFilter();
+  }
+
+  estilarEncabezado(hoja.getRange(1, 1, 1, cols));
+  hoja.getRange(1, 1, hoja.getMaxRows(), cols).setFontFamily(FUENTE);
+  hoja.setFrozenRows(1);
+  hoja.setRowHeight(1, 30);
+  hoja.autoResizeColumns(1, cols);
+  hoja.setColumnWidth(4, Math.max(hoja.getColumnWidth(4), 200)); // Título
+  hoja.setColumnWidth(8, Math.max(hoja.getColumnWidth(8), 220)); // Copy
+}
+
+// --- Tareas ---
+
+function escribirTareas(tareas) {
+  var encabezados = ["Texto", "Hecha", "Fecha límite", "Vencida"];
+  var hoy = Utilities.formatDate(new Date(), "America/Argentina/Buenos_Aires", "yyyy-MM-dd");
+
+  var filas = tareas.map(function (t) {
+    var vencida = !t.hecha && t.fecha_limite && t.fecha_limite < hoy;
+    return [t.texto, t.hecha ? "Sí" : "No", t.fecha_limite || "", vencida ? "Sí" : "No"];
+  });
+
+  var hoja = prepararHoja(PESTANA_TAREAS);
+  var cols = encabezados.length;
+  hoja.getRange(1, 1, 1, cols).setValues([encabezados]);
+
+  if (filas.length > 0) {
+    hoja.getRange(2, 1, filas.length, cols).setValues(filas);
+
+    // Igual que en Resumen mensual: lo urgente en rojo, para no tener que
+    // leer fila por fila.
+    filas.forEach(function (f, i) {
+      if (f[3] === "Sí") {
+        hoja.getRange(i + 2, 3, 1, 2).setFontColor(COLOR.negativo).setFontWeight("bold");
+      }
+    });
+
+    aplicarBandas(hoja.getRange(1, 1, filas.length + 1, cols));
+    hoja.getRange(1, 1, filas.length + 1, cols).createFilter();
+  }
+
+  estilarEncabezado(hoja.getRange(1, 1, 1, cols));
+  hoja.getRange(1, 1, hoja.getMaxRows(), cols).setFontFamily(FUENTE);
+  hoja.setFrozenRows(1);
+  hoja.setRowHeight(1, 30);
+  hoja.autoResizeColumns(1, cols);
+  hoja.setColumnWidth(1, Math.max(hoja.getColumnWidth(1), 260)); // Texto
 }
 
 function ordenarPestanas() {
