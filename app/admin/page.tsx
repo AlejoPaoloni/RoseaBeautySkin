@@ -61,7 +61,7 @@ export default function AdminPage() {
     const anterior = productos;
     setProductos((prev) => prev.filter((x) => x.id !== p.id));
     try {
-      await eliminarProducto(p.id);
+      await eliminarProducto(p.id, p.imagen_url);
     } catch {
       setProductos(anterior);
       alert("No se pudo eliminar el producto. Probá de nuevo.");
