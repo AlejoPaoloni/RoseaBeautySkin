@@ -5,6 +5,7 @@ import type { Estado, Producto } from "@/lib/types";
 import { CATEGORIAS } from "@/lib/types";
 import type { Categoria } from "@/lib/types";
 import { agruparPorSubcategoria } from "@/lib/catalog";
+import { productosStockBajo } from "@/lib/gestion";
 import {
   actualizarProducto,
   eliminarProducto,
@@ -30,6 +31,8 @@ export default function AdminPage() {
   const [cargando, setCargando] = useState(true);
   const [editando, setEditando] = useState<Producto | null>(null);
   const [formAbierto, setFormAbierto] = useState(false);
+
+  const bajoStock = productosStockBajo(productos);
 
   async function cargar() {
     try {
@@ -128,7 +131,31 @@ export default function AdminPage() {
         {cargando ? (
           <p className="text-center text-neutral-400">Cargando…</p>
         ) : (
-          CATEGORIAS.map((cat) => (
+          <>
+            {bajoStock.length > 0 && (
+              <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p className="text-sm font-medium text-amber-800">
+                  {bajoStock.length} producto{bajoStock.length === 1 ? "" : "s"}{" "}
+                  con poco stock
+                </p>
+                <ul className="mt-2 space-y-1">
+                  {bajoStock.map((p) => (
+                    <li key={p.id}>
+                      <button
+                        onClick={() => {
+                          setEditando(p);
+                          setFormAbierto(true);
+                        }}
+                        className="text-sm text-amber-700 underline-offset-2 hover:underline"
+                      >
+                        {p.nombre} — {p.stock} en stock
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {CATEGORIAS.map((cat) => (
             <section key={cat} className="mb-10">
               <h2 className="font-serif text-2xl text-rosea-700">{cat}</h2>
               {Object.entries(agruparPorSubcategoria(productos, cat)).map(
@@ -171,7 +198,8 @@ export default function AdminPage() {
                 )
               )}
             </section>
-          ))
+          ))}
+          </>
         )}
       </main>
 
