@@ -1,9 +1,38 @@
 import type { Categoria, Producto } from "./types";
-import { SUBCATEGORIAS } from "./types";
+import { CATEGORIAS, SUBCATEGORIAS } from "./types";
 
 export function ordenarProductos(productos: Producto[]): Producto[] {
   return [...productos].sort(
     (a, b) =>
+      a.orden_display - b.orden_display ||
+      a.created_at.localeCompare(b.created_at)
+  );
+}
+
+// El drag & drop del admin mueve orden_display seccion por seccion (una
+// subcategoria a la vez): el numero solo tiene sentido comparado contra
+// otro producto de la misma subcategoria. En la vista "Todos" del catalogo,
+// donde se ven categorias y subcategorias mezcladas, comparar ese numero
+// entre por ejemplo Rostro y Skincare da un orden sin sentido — como si
+// "Rostro #0" y "Skincare #0" tuvieran alguna relacion real.
+//
+// Se agrupa primero por categoria y subcategoria (mismo orden que usan
+// FilterBar y el admin) y recien ahi se usa orden_display como desempate.
+// Con un filtro de categoria/subcategoria activo esto no cambia nada — todos
+// los productos comparten el mismo grupo y el resultado es identico al de
+// ordenarProductos — asi que es seguro aplicarlo siempre.
+export function ordenarParaCatalogo(productos: Producto[]): Producto[] {
+  function indiceCategoria(c: Categoria): number {
+    return CATEGORIAS.indexOf(c);
+  }
+  function indiceSubcategoria(c: Categoria, sub: string): number {
+    return SUBCATEGORIAS[c].indexOf(sub);
+  }
+  return [...productos].sort(
+    (a, b) =>
+      indiceCategoria(a.categoria) - indiceCategoria(b.categoria) ||
+      indiceSubcategoria(a.categoria, a.subcategoria) -
+        indiceSubcategoria(b.categoria, b.subcategoria) ||
       a.orden_display - b.orden_display ||
       a.created_at.localeCompare(b.created_at)
   );

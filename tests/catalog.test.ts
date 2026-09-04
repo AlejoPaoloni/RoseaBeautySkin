@@ -3,6 +3,7 @@ import {
   agruparPorSubcategoria,
   filtrarProductos,
   formatearPrecio,
+  ordenarParaCatalogo,
   ordenarProductos,
   productosPorEncargo,
   productosDestacados,
@@ -221,6 +222,49 @@ describe("tienePrecioPublico", () => {
     expect(tienePrecioPublico(producto({ estado: "Disponible" }))).toBe(true);
     expect(tienePrecioPublico(producto({ estado: "Sin stock" }))).toBe(true);
     expect(tienePrecioPublico(producto({ estado: "Por Encargo" }))).toBe(false);
+  });
+});
+
+describe("ordenarParaCatalogo", () => {
+  it("agrupa por categoria y subcategoria antes de mirar orden_display", () => {
+    // Mismo orden_display en subcategorias distintas: sin agrupar, quedarian
+    // intercalados por created_at en vez de por seccion.
+    const rostro = producto({
+      categoria: "Maquillajes",
+      subcategoria: "Rostro",
+      orden_display: 0,
+      created_at: "2026-01-01T00:00:00Z",
+    });
+    const skincare = producto({
+      categoria: "Skincare",
+      subcategoria: "Skincare",
+      orden_display: 0,
+      created_at: "2026-01-02T00:00:00Z",
+    });
+    const ojos = producto({
+      categoria: "Maquillajes",
+      subcategoria: "Ojos",
+      orden_display: 0,
+      created_at: "2026-01-03T00:00:00Z",
+    });
+    // Sin agrupar (por created_at) el orden seria rostro, skincare, ojos.
+    const orden = ordenarParaCatalogo([skincare, ojos, rostro]).map(
+      (p) => p.subcategoria
+    );
+    expect(orden).toEqual(["Rostro", "Ojos", "Skincare"]);
+  });
+
+  it("respeta el orden_display dentro de la misma subcategoria", () => {
+    const a = producto({ subcategoria: "Labios", orden_display: 2 });
+    const b = producto({ subcategoria: "Labios", orden_display: 1 });
+    expect(ordenarParaCatalogo([a, b]).map((p) => p.id)).toEqual([b.id, a.id]);
+  });
+
+  it("con un solo grupo (ej: filtro activo) da lo mismo que ordenarProductos", () => {
+    const a = producto({ subcategoria: "Labios", orden_display: 2 });
+    const b = producto({ subcategoria: "Labios", orden_display: 0 });
+    const c = producto({ subcategoria: "Labios", orden_display: 1 });
+    expect(ordenarParaCatalogo([a, b, c])).toEqual(ordenarProductos([a, b, c]));
   });
 });
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Categoria, Producto } from "@/lib/types";
-import { filtrarProductos, rangoPrecios } from "@/lib/catalog";
+import { filtrarProductos, ordenarParaCatalogo, rangoPrecios } from "@/lib/catalog";
 import FilterBar from "./FilterBar";
 import ProductCard from "./ProductCard";
 
@@ -53,14 +53,16 @@ export default function CatalogSection({
     setPrecioMax(tope);
   }
 
-  const visibles = filtrarProductos(
-    productos,
-    categoria,
-    subcategoria,
-    soloDisponibles,
-    busqueda,
-    precioMin,
-    precioMax
+  const visibles = ordenarParaCatalogo(
+    filtrarProductos(
+      productos,
+      categoria,
+      subcategoria,
+      soloDisponibles,
+      busqueda,
+      precioMin,
+      precioMax
+    )
   );
 
   return (
