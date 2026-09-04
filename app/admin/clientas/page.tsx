@@ -9,9 +9,10 @@ import {
   listarClientas,
 } from "@/lib/db-gestion";
 import { listarVentas } from "@/lib/db-finanzas";
-import { historialClienta } from "@/lib/gestion";
+import { coincide, historialClienta } from "@/lib/gestion";
 import { formatearFecha } from "@/lib/finanzas";
 import { formatearPrecio } from "@/lib/catalog";
+import BuscadorAdmin from "@/components/admin/BuscadorAdmin";
 
 export default function ClientasPage() {
   const [clientas, setClientas] = useState<Clienta[]>([]);
@@ -19,6 +20,7 @@ export default function ClientasPage() {
   const [cargando, setCargando] = useState(true);
   const [editando, setEditando] = useState<Clienta | null>(null);
   const [formAbierto, setFormAbierto] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
 
   async function cargar() {
     try {
@@ -52,6 +54,10 @@ export default function ClientasPage() {
     }
   }
 
+  const clientasFiltradas = clientas.filter((c) =>
+    coincide(busqueda, [c.nombre, c.contacto, c.nota])
+  );
+
   return (
     <div className="min-h-screen bg-rosea-50/50">
       <header className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-rosea-100 bg-white px-6 py-3">
@@ -68,11 +74,19 @@ export default function ClientasPage() {
       </header>
 
       <main className="mx-auto max-w-3xl px-4 py-8">
+        <div className="mb-4">
+          <BuscadorAdmin
+            value={busqueda}
+            onChange={setBusqueda}
+            placeholder="Buscar por nombre, contacto o nota…"
+          />
+        </div>
+
         {cargando ? (
           <p className="text-center text-neutral-400">Cargando…</p>
         ) : (
           <div className="space-y-2">
-            {clientas.map((c) => {
+            {clientasFiltradas.map((c) => {
               const historial = historialClienta(ventas, c.id);
               return (
                 <article
@@ -117,6 +131,11 @@ export default function ClientasPage() {
                 </article>
               );
             })}
+            {clientasFiltradas.length === 0 && clientas.length > 0 && (
+              <p className="rounded-lg border border-dashed border-rosea-200 p-3 text-sm text-neutral-400">
+                {`Ninguna clienta coincide con "${busqueda}".`}
+              </p>
+            )}
             {clientas.length === 0 && (
               <p className="rounded-lg border border-dashed border-rosea-200 p-3 text-sm text-neutral-400">
                 Sin clientas cargadas. Al crear una, aparece en el desplegable

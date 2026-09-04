@@ -8,8 +8,9 @@ import {
   eliminarTarea,
   listarTareas,
 } from "@/lib/db-gestion";
-import { ordenarTareas, tareaVencida } from "@/lib/gestion";
+import { coincide, ordenarTareas, tareaVencida } from "@/lib/gestion";
 import { fechaHoy, formatearFecha } from "@/lib/finanzas";
+import BuscadorAdmin from "@/components/admin/BuscadorAdmin";
 
 export default function TareasPage() {
   const [tareas, setTareas] = useState<Tarea[]>([]);
@@ -17,6 +18,7 @@ export default function TareasPage() {
   const [limite, setLimite] = useState("");
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
 
   async function cargar() {
     try {
@@ -33,6 +35,7 @@ export default function TareasPage() {
   const hoy = fechaHoy();
   const ordenadas = ordenarTareas(tareas);
   const pendientes = ordenadas.filter((t) => !t.hecha).length;
+  const filtradas = ordenadas.filter((t) => coincide(busqueda, [t.texto]));
 
   async function agregar(e: React.FormEvent) {
     e.preventDefault();
@@ -114,11 +117,19 @@ export default function TareasPage() {
           </button>
         </form>
 
+        <div className="mt-4">
+          <BuscadorAdmin
+            value={busqueda}
+            onChange={setBusqueda}
+            placeholder="Buscar tarea…"
+          />
+        </div>
+
         {cargando ? (
           <p className="mt-8 text-center text-neutral-400">Cargando…</p>
         ) : (
           <div className="mt-6 space-y-2">
-            {ordenadas.map((t) => (
+            {filtradas.map((t) => (
               <article
                 key={t.id}
                 className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-white p-3"
@@ -155,6 +166,11 @@ export default function TareasPage() {
                 </button>
               </article>
             ))}
+            {filtradas.length === 0 && ordenadas.length > 0 && (
+              <p className="rounded-lg border border-dashed border-rosea-200 p-3 text-sm text-neutral-400">
+                {`Ninguna tarea coincide con "${busqueda}".`}
+              </p>
+            )}
             {ordenadas.length === 0 && (
               <p className="rounded-lg border border-dashed border-rosea-200 p-3 text-sm text-neutral-400">
                 Sin tareas. Todo al día.
