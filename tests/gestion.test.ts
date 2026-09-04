@@ -3,6 +3,7 @@ import {
   agendadas,
   agruparPorDia,
   checklistPorDefecto,
+  coincide,
   esIdea,
   grillaMes,
   ideas,
@@ -245,5 +246,25 @@ describe("tareas", () => {
     expect(tareaVencida(vieja, "2026-09-03")).toBe(true);
     expect(tareaVencida({ ...vieja, hecha: true }, "2026-09-03")).toBe(false);
     expect(tareaVencida(tarea({ fecha_limite: null }), "2026-09-03")).toBe(false);
+  });
+});
+
+describe("coincide", () => {
+  it("sin busqueda, todo matchea", () => {
+    expect(coincide("", ["Sofi"])).toBe(true);
+    expect(coincide("   ", ["Sofi"])).toBe(true);
+  });
+
+  it("busca sin importar mayusculas ni en que campo esta", () => {
+    expect(coincide("sofi", ["Sofi Prueba", null])).toBe(true);
+    expect(coincide("SOFI", [null, "contacto", "nota con Sofi adentro"])).toBe(true);
+  });
+
+  it("no matchea si ningun campo lo contiene", () => {
+    expect(coincide("labial", ["Sofi Prueba", null])).toBe(false);
+  });
+
+  it("null-safe: campos vacios no rompen la busqueda", () => {
+    expect(coincide("algo", [null, null])).toBe(false);
   });
 });

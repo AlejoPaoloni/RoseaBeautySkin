@@ -107,6 +107,15 @@ export function pedidosAbiertos(pedidos: Pedido[]): Pedido[] {
   return pedidos.filter((p) => p.estado !== "Entregado");
 }
 
+// Normaliza para comparar: minusculas y sin espacios de mas. Devuelve true si
+// `texto` no viene vacio (sin busqueda, todo matchea) o si `campos` contiene
+// el termino en alguno de sus valores no nulos.
+export function coincide(busqueda: string, campos: (string | null)[]): boolean {
+  const q = busqueda.trim().toLowerCase();
+  if (!q) return true;
+  return campos.some((c) => c?.toLowerCase().includes(q) ?? false);
+}
+
 // --- Clientas ---
 
 export interface HistorialClienta {

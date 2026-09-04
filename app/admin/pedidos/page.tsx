@@ -12,10 +12,11 @@ import {
   listarClientas,
   listarPedidos,
 } from "@/lib/db-gestion";
-import { pedidosAbiertos, saldoPedido, totalPedido } from "@/lib/gestion";
+import { coincide, pedidosAbiertos, saldoPedido, totalPedido } from "@/lib/gestion";
 import { fechaHoy, formatearFecha } from "@/lib/finanzas";
 import { formatearPrecio } from "@/lib/catalog";
 import PedidoForm from "@/components/admin/pedidos/PedidoForm";
+import BuscadorAdmin from "@/components/admin/BuscadorAdmin";
 
 export default function PedidosPage() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
@@ -23,6 +24,7 @@ export default function PedidosPage() {
   const [clientas, setClientas] = useState<Clienta[]>([]);
   const [cargando, setCargando] = useState(true);
   const [formAbierto, setFormAbierto] = useState(false);
+  const [busqueda, setBusqueda] = useState("");
 
   async function cargar() {
     try {
@@ -43,15 +45,20 @@ export default function PedidosPage() {
     cargar();
   }, []);
 
-  const abiertos = pedidosAbiertos(pedidos);
-  const cerrados = pedidos.filter((p) => p.estado === "Entregado");
-
   function nombreDe(p: Pedido): string {
     if (p.cliente_id) {
       return clientas.find((c) => c.id === p.cliente_id)?.nombre ?? "Sin nombre";
     }
     return p.cliente_texto ?? "Sin nombre";
   }
+
+  // Se filtra antes de separar en curso/entregados, para que la busqueda
+  // reduzca las dos listas de forma consistente.
+  const pedidosFiltrados = pedidos.filter((p) =>
+    coincide(busqueda, [nombreDe(p), p.nota, ...p.items.map((i) => i.nombre)])
+  );
+  const abiertos = pedidosAbiertos(pedidosFiltrados);
+  const cerrados = pedidosFiltrados.filter((p) => p.estado === "Entregado");
 
   async function cambiarEstado(p: Pedido, estado: EstadoPedido) {
     const previo = pedidos;
@@ -200,6 +207,14 @@ export default function PedidosPage() {
       </header>
 
       <main className="mx-auto max-w-4xl px-4 py-8">
+        <div className="mb-6">
+          <BuscadorAdmin
+            value={busqueda}
+            onChange={setBusqueda}
+            placeholder="Buscar por clienta o producto…"
+          />
+        </div>
+
         {cargando ? (
           <p className="text-center text-neutral-400">Cargando…</p>
         ) : (
@@ -214,7 +229,9 @@ export default function PedidosPage() {
                 ))}
                 {abiertos.length === 0 && (
                   <p className="rounded-lg border border-dashed border-rosea-200 p-3 text-sm text-neutral-400">
-                    Sin pedidos abiertos.
+                    {busqueda.trim()
+                      ? `Ningún pedido en curso coincide con "${busqueda}".`
+                      : "Sin pedidos abiertos."}
                   </p>
                 )}
               </div>
