@@ -21,6 +21,9 @@ export const metadata: Metadata = {
   ),
   title: `${config.marca} | Make Up & Skin Care Importado 💄`,
   description: config.tagline,
+  // Sin esto, Google puede llegar a indexar por separado la URL real y una
+  // preview de Vercel (o con/sin "www") como si fueran paginas distintas.
+  alternates: { canonical: "/" },
   openGraph: {
     title: config.marca,
     description: config.tagline,
