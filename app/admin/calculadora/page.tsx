@@ -146,6 +146,12 @@ export default function CalculadoraPage() {
     }
   }
 
+  // Un por encargo se cotiza por consulta y no muestra precio en la landing
+  // (ver tienePrecioPublico en lib/catalog.ts): no tiene sentido calcularle
+  // uno fijo aca. Sin stock tampoco entra: mientras no se repone, cargarle
+  // un precio nuevo no cambia nada.
+  const productosParaCalcular = productos.filter((p) => p.estado === "Disponible");
+
   const producto = productos.find((p) => p.id === productoId) ?? null;
 
   const resultado = calcularPrecio({
@@ -218,7 +224,7 @@ export default function CalculadoraPage() {
                     <option value="">
                       {cargando ? "Cargando…" : "Sin elegir (solo calcular)"}
                     </option>
-                    {productos.map((p) => (
+                    {productosParaCalcular.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.marca ? `${p.marca} · ` : ""}
                         {p.nombre}
