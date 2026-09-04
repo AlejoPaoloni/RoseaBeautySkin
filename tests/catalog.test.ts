@@ -7,6 +7,7 @@ import {
   productosPorEncargo,
   productosDestacados,
   rangoPrecios,
+  tienePrecioPublico,
 } from "@/lib/catalog";
 import { conOrden } from "@/lib/orden";
 import type { Producto } from "@/lib/types";
@@ -117,6 +118,25 @@ describe("filtrarProductos", () => {
     ).toHaveLength(1);
   });
 
+  it("el filtro de precio no esconde los por encargo", () => {
+    const rs = [
+      producto({ precio: 5000 }),
+      // Sin precio visible: un rango que la clienta no ve no puede sacarlo.
+      producto({ precio: 999000, estado: "Por Encargo" }),
+    ];
+    const filtrados = filtrarProductos(rs, null, null, false, null, 1000, 10000);
+    expect(filtrados).toHaveLength(2);
+    expect(filtrados.some((p) => p.estado === "Por Encargo")).toBe(true);
+  });
+
+  it("los por encargo si respetan el resto de los filtros", () => {
+    const rs = [
+      producto({ categoria: "Skincare", subcategoria: "Skincare", estado: "Por Encargo" }),
+    ];
+    expect(filtrarProductos(rs, "Maquillajes", null, false, null, 1, 2)).toHaveLength(0);
+    expect(filtrarProductos(rs, null, null, true)).toHaveLength(0);
+  });
+
   it("combina busqueda, precio y categoria con AND", () => {
     const rs = [
       producto({ categoria: "Maquillajes", nombre: "Rhode Blush", precio: 12000 }),
@@ -183,6 +203,29 @@ describe("rangoPrecios", () => {
 
   it("devuelve 0 en ambos si no hay productos", () => {
     expect(rangoPrecios([])).toEqual({ piso: 0, tope: 0 });
+  });
+
+  it("ignora los por encargo al calcular los extremos", () => {
+    const ps = [
+      producto({ precio: 10000 }),
+      producto({ precio: 50000 }),
+      // Su precio interno no tiene que estirar una barra donde no aparece.
+      producto({ precio: 999000, estado: "Por Encargo" }),
+    ];
+    expect(rangoPrecios(ps)).toEqual({ piso: 10000, tope: 50000 });
+  });
+
+  it("devuelve 0 si todos los productos son por encargo", () => {
+    const ps = [producto({ precio: 40000, estado: "Por Encargo" })];
+    expect(rangoPrecios(ps)).toEqual({ piso: 0, tope: 0 });
+  });
+});
+
+describe("tienePrecioPublico", () => {
+  it("es falso solo para los por encargo", () => {
+    expect(tienePrecioPublico(producto({ estado: "Disponible" }))).toBe(true);
+    expect(tienePrecioPublico(producto({ estado: "Sin stock" }))).toBe(true);
+    expect(tienePrecioPublico(producto({ estado: "Por Encargo" }))).toBe(false);
   });
 });
 

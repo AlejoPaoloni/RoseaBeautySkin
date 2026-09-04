@@ -11,7 +11,7 @@ export const config = {
   mensajeConsulta: "Hola, tengo una consulta",
   email: "contacto@roseabeauty.com",
   notaPorEncargo:
-    "Los productos por encargo se piden al momento y llegan en 15 a 20 días.",
+    "Los productos por encargo tienen una demora de 15 a 30 días.",
 };
 
 export function whatsappUrl(): string {

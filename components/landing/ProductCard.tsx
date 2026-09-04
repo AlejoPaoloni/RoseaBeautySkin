@@ -3,7 +3,11 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useState } from "react";
-import { esProductoNuevo, formatearPrecio } from "@/lib/catalog";
+import {
+  esProductoNuevo,
+  formatearPrecio,
+  tienePrecioPublico,
+} from "@/lib/catalog";
 import { instagramDmUrl } from "@/lib/config";
 import { compartirProducto } from "@/lib/share";
 import type { Producto } from "@/lib/types";
@@ -130,9 +134,15 @@ export default function ProductCard({
         {producto.tonos && producto.tonos.length > 0 && (
           <ColorSwatches tonos={producto.tonos} />
         )}
-        <p className="mt-auto pt-2 font-serif text-xl font-semibold text-rosea-500 sm:text-2xl">
-          {formatearPrecio(producto.precio)}
-        </p>
+        {tienePrecioPublico(producto) ? (
+          <p className="mt-auto pt-2 font-serif text-xl font-semibold text-rosea-500 sm:text-2xl">
+            {formatearPrecio(producto.precio)}
+          </p>
+        ) : (
+          <p className="mt-auto pt-2 font-serif text-lg text-rosea-500 sm:text-xl">
+            Precio a consultar
+          </p>
+        )}
         <a
           href={instagramDmUrl()}
           target="_blank"
