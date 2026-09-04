@@ -42,6 +42,9 @@ const IconoClientas = trazo(
 const IconoTareas = trazo(
   "M4 6l1.5 1.5L8 5M4 12l1.5 1.5L8 11M10.5 6.5h5.5M10.5 12.5h5.5"
 );
+const IconoCalculadora = trazo(
+  "M5.5 3.5h9v13h-9v-13ZM7.5 6.5h5M7.5 10h.01M10 10h.01M12.5 10h.01M7.5 13h.01M10 13h.01M12.5 13h.01"
+);
 const IconoMas = trazo("M10 5.5v9M5.5 10h9");
 const IconoLanding = trazo(
   "M11.5 4.5h4v4M15.5 4.5 9 11M13.5 11.5v4h-9v-9h4"
@@ -60,6 +63,7 @@ const SECCIONES: Seccion[] = [
   { href: "/admin", etiqueta: "Productos", icono: IconoProductos },
   { href: "/admin/contenido", etiqueta: "Contenido", icono: IconoContenido },
   { href: "/admin/finanzas", etiqueta: "Finanzas", icono: IconoFinanzas },
+  { href: "/admin/calculadora", etiqueta: "Calculadora", icono: IconoCalculadora },
   { href: "/admin/pedidos", etiqueta: "Pedidos", icono: IconoPedidos },
   { href: "/admin/clientas", etiqueta: "Clientas", icono: IconoClientas },
   { href: "/admin/tareas", etiqueta: "Tareas", icono: IconoTareas },
