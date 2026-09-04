@@ -1,4 +1,4 @@
-import { formatearPrecio } from "@/lib/catalog";
+import { formatearPrecio, tienePrecioPublico } from "@/lib/catalog";
 import type { Producto } from "@/lib/types";
 
 // Comparte un producto a cualquier red: en mobile con Web Share soportado
@@ -7,7 +7,11 @@ import type { Producto } from "@/lib/types";
 // al portapapeles para que se pueda pegar donde sea.
 // Devuelve true si se pudo compartir o copiar, false si el usuario cancelo.
 export async function compartirProducto(producto: Producto): Promise<boolean> {
-  const texto = `${producto.nombre} - ${formatearPrecio(producto.precio)}`;
+  // Un por encargo se comparte sin precio: se cotiza por consulta, mandar un
+  // numero por WhatsApp seria contradecir a la card.
+  const texto = tienePrecioPublico(producto)
+    ? `${producto.nombre} - ${formatearPrecio(producto.precio)}`
+    : `${producto.nombre} - precio a consultar`;
   const url = typeof window !== "undefined" ? window.location.href : "";
 
   if (typeof navigator !== "undefined" && navigator.share) {

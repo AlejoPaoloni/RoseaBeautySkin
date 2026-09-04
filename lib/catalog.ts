@@ -9,6 +9,13 @@ export function ordenarProductos(productos: Producto[]): Producto[] {
   );
 }
 
+// El precio de los productos por encargo se cotiza por consulta: se pide al
+// momento y depende del dolar del dia. No se muestra en ningun lado publico
+// — ni en la card, ni al compartir, ni en el JSON-LD.
+export function tienePrecioPublico(producto: Producto): boolean {
+  return producto.estado !== "Por Encargo";
+}
+
 export function filtrarProductos(
   productos: Producto[],
   categoria: Categoria | null,
@@ -27,9 +34,12 @@ export function filtrarProductos(
       (!q ||
         p.nombre.toLowerCase().includes(q) ||
         (p.marca?.toLowerCase().includes(q) ?? false)) &&
-      // == null para que 0 sea un limite valido, no "sin filtro"
-      (precioMin == null || p.precio >= precioMin) &&
-      (precioMax == null || p.precio <= precioMax)
+      // Los por encargo no muestran precio, asi que tampoco los filtra: si
+      // no, un rango que la clienta no puede ver los haria desaparecer.
+      (!tienePrecioPublico(p) ||
+        // == null para que 0 sea un limite valido, no "sin filtro"
+        ((precioMin == null || p.precio >= precioMin) &&
+          (precioMax == null || p.precio <= precioMax)))
   );
 }
 
@@ -43,8 +53,10 @@ export function rangoPrecios(productos: Producto[]): {
   piso: number;
   tope: number;
 } {
-  if (productos.length === 0) return { piso: 0, tope: 0 };
-  const precios = productos.map((p) => p.precio);
+  // Solo los que muestran precio: el precio interno de un por encargo no
+  // tiene por que mover los extremos de una barra donde no aparece.
+  const precios = productos.filter(tienePrecioPublico).map((p) => p.precio);
+  if (precios.length === 0) return { piso: 0, tope: 0 };
   return {
     piso: Math.floor(Math.min(...precios) / PASO_PRECIO) * PASO_PRECIO,
     tope: Math.ceil(Math.max(...precios) / PASO_PRECIO) * PASO_PRECIO,

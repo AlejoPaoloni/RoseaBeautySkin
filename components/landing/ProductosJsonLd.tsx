@@ -1,4 +1,5 @@
 import type { Producto } from "@/lib/types";
+import { tienePrecioPublico } from "@/lib/catalog";
 
 const DISPONIBILIDAD: Record<Producto["estado"], string> = {
   Disponible: "https://schema.org/InStock",
@@ -30,7 +31,10 @@ export default function ProductosJsonLd({
         offers: {
           "@type": "Offer",
           priceCurrency: "ARS",
-          price: p.precio,
+          // Sin price en los por encargo: el JSON-LD queda en el HTML y lo
+          // indexa Google, asi que publicar aca el precio que la card
+          // esconde seria filtrarlo igual.
+          ...(tienePrecioPublico(p) ? { price: p.precio } : {}),
           availability: DISPONIBILIDAD[p.estado],
         },
       },

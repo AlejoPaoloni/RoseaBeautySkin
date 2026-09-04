@@ -49,6 +49,10 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Los por encargo se cotizan por consulta: la landing no muestra su precio,
+  // asi que tampoco tiene sentido exigirlo aca.
+  const esPorEncargo = estado === "Por Encargo";
+
   // Feedback en vivo del margen mientras se tipea precio y costo.
   const margen =
     precio.trim() === "" || costo.trim() === ""
@@ -196,13 +200,14 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
 
         <div className="mt-4 grid grid-cols-2 gap-3">
           <label className="block text-sm text-neutral-600">
-            Precio (ARS) *
+            Precio (ARS) {esPorEncargo ? "" : "*"}
             <input
               type="number"
               min={0}
               step={1}
-              required
+              required={!esPorEncargo}
               value={precio}
+              placeholder={esPorEncargo ? "Se cotiza por consulta" : ""}
               onChange={(e) => setPrecio(e.target.value)}
               className="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-rosea-300"
             />
@@ -221,9 +226,11 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
           </label>
         </div>
         <p className="mt-1 text-xs text-neutral-400">
-          {margen === null
-            ? "Cargá el costo para ver la ganancia por unidad en finanzas."
-            : `Ganás ${formatearPrecio(margen)} por unidad (${margenPct}% del precio).`}
+          {esPorEncargo
+            ? "Por encargo: la landing no muestra el precio, dice “Precio a consultar”. Podés dejarlo vacío o cargarlo solo como referencia tuya."
+            : margen === null
+              ? "Cargá el costo para ver la ganancia por unidad en finanzas."
+              : `Ganás ${formatearPrecio(margen)} por unidad (${margenPct}% del precio).`}
         </p>
 
         <div className="mt-4 grid grid-cols-2 gap-3">

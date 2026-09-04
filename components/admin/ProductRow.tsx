@@ -65,7 +65,11 @@ export default function ProductRow({
           </div>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="text-xs text-rosea-600">
-              {formatearPrecio(producto.precio)}
+              {/* Un por encargo sin precio cargado se cotiza por consulta:
+                  mostrar "$ 0" pareceria un dato roto. */}
+              {producto.estado === "Por Encargo" && producto.precio === 0
+                ? "A consultar"
+                : formatearPrecio(producto.precio)}
             </span>
             {producto.stock !== null && (
               <span
