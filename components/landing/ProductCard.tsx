@@ -78,7 +78,6 @@ export default function ProductCard({
               alt={producto.nombre}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-              unoptimized={producto.imagen_url.includes("sephora.com")}
               onLoad={() => setImagenCargada(true)}
               className={`object-cover transition-[opacity,transform] duration-700 ease-out ${
                 imagenCargada ? "opacity-100" : "opacity-0"
