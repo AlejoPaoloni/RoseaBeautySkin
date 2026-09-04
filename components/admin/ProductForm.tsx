@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Categoria, Estado, Producto, Tono } from "@/lib/types";
 import { CATEGORIAS, ESTADOS, SUBCATEGORIAS } from "@/lib/types";
-import { actualizarProducto, crearProducto, subirImagen } from "@/lib/db";
+import { actualizarProducto, crearProducto, reemplazarImagen } from "@/lib/db";
 import { formatearPrecio } from "@/lib/catalog";
 import { comprimirImagen } from "@/lib/imagen";
 
@@ -126,7 +126,14 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
       let imagen_url = producto?.imagen_url ?? null;
       if (archivo) {
         const blob = await comprimirImagen(archivo);
-        imagen_url = await subirImagen(blob, `${crypto.randomUUID()}.webp`);
+        // reemplazarImagen borra la foto vieja del bucket despues de subir
+        // la nueva: sin esto, cada retoque de imagen dejaba un archivo
+        // huerfano ocupando espacio para siempre.
+        imagen_url = await reemplazarImagen(
+          blob,
+          `${crypto.randomUUID()}.webp`,
+          producto?.imagen_url ?? null
+        );
       }
       const tonosLimpios = tonos
         .map((t) => ({ ...t, nombre: t.nombre.trim() }))
