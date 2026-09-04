@@ -63,9 +63,11 @@ El panel tiene panel lateral fijo en escritorio y barra inferior en el celular
 
 ### Espejo en Google Sheets
 
-`scripts/sheets-sync.gs` copia ventas, gastos y un resumen mensual a una Google
-Sheet cada hora. La fuente de verdad sigue siendo Supabase; la hoja es solo
-lectura y se reescribe entera en cada corrida.
+`scripts/sheets-sync.gs` copia toda la gestión — ventas, gastos, resumen
+mensual, clientas, pedidos, contenido y tareas — a una Google Sheet cada hora.
+Es el backup fuera de Supabase: si algo pasa ahí, queda una copia. La fuente de
+verdad sigue siendo Supabase; la hoja es solo lectura y se reescribe entera en
+cada corrida.
 
 1. En la Sheet: **Extensiones → Apps Script**, pegar el archivo.
 2. **Configuración del proyecto → Propiedades del script**: cargar
