@@ -1,11 +1,6 @@
 export const config = {
   marca: "Rosea Beauty",
   tagline: "Tu rutina de belleza, nivel internacional",
-  whatsapp: {
-    // Codigo de pais + numero, sin "+" ni espacios. Ej: "5491112345678"
-    numero: "",
-    mensaje: "Hola, tengo una consulta",
-  },
   instagram: "https://instagram.com/roseabeautyskin",
   instagramUsuario: "roseabeautyskin",
   mensajeConsulta: "Hola, tengo una consulta",
@@ -20,11 +15,6 @@ export const config = {
 export function siteUrl(): string {
   const url = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   return url.replace(/\/+$/, "");
-}
-
-export function whatsappUrl(): string {
-  const { numero, mensaje } = config.whatsapp;
-  return `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
 }
 
 // Abre el mensaje directo de Instagram (no solo el perfil).
