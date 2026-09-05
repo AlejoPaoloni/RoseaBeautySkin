@@ -71,6 +71,7 @@ export default function TareasPage() {
   }
 
   async function borrar(t: Tarea) {
+    if (!confirm(`¿Eliminar "${t.texto}"?`)) return;
     const previo = tareas;
     setTareas((prev) => prev.filter((x) => x.id !== t.id));
     try {
