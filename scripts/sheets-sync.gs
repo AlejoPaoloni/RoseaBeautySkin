@@ -302,6 +302,24 @@ function aplicarBandas(rango) {
   banda.setSecondRowColor(COLOR.fondo);
 }
 
+// Alto de fila mas generoso que el default de Sheets (21px): con encabezado
+// a 30px y filas de datos al default, el contenido tocaba el borde de la
+// celda y se veia amontonado apenas se completaba con datos reales.
+function ajustarFilasDatos(hoja, cantidadFilas) {
+  if (cantidadFilas === 0) return;
+  hoja.setRowHeights(2, cantidadFilas, 26);
+  hoja.getRange(2, 1, cantidadFilas, hoja.getMaxColumns()).setVerticalAlignment("middle");
+}
+
+// autoResizeColumns ajusta cada columna al pixel justo del contenido, sin
+// margen alrededor. Se llama al final, despues de cualquier ancho manual
+// (ej: Nota, Producto), para que tambien esas columnas queden con aire.
+function agregarAireColumnas(hoja, cols) {
+  for (var c = 1; c <= cols; c++) {
+    hoja.setColumnWidth(c, hoja.getColumnWidth(c) + 16);
+  }
+}
+
 function estilarFilaTotal(rango) {
   rango
     .setFontWeight("bold")
@@ -343,6 +361,7 @@ function escribirVentas(ventas) {
 
   if (filas.length > 0) {
     hoja.getRange(2, 1, filas.length, cols).setValues(filas);
+    ajustarFilasDatos(hoja, filas.length);
 
     var totalCant = 0, totalVenta = 0, totalGanancia = 0;
     filas.forEach(function (f) {
@@ -375,6 +394,7 @@ function escribirVentas(ventas) {
   hoja.autoResizeColumns(1, cols);
   hoja.setColumnWidth(4, Math.max(hoja.getColumnWidth(4), 200)); // Producto
   hoja.setColumnWidth(10, Math.max(hoja.getColumnWidth(10), 160)); // Nota
+  agregarAireColumnas(hoja, cols);
 }
 
 // --- Gastos ---
@@ -391,6 +411,7 @@ function escribirGastos(gastos) {
 
   if (filas.length > 0) {
     hoja.getRange(2, 1, filas.length, cols).setValues(filas);
+    ajustarFilasDatos(hoja, filas.length);
 
     var totalMonto = filas.reduce(function (t, f) { return t + f[3]; }, 0);
     var filaTotal = filas.length + 2;
@@ -410,6 +431,7 @@ function escribirGastos(gastos) {
   hoja.setRowHeight(1, 30);
   hoja.autoResizeColumns(1, cols);
   hoja.setColumnWidth(3, Math.max(hoja.getColumnWidth(3), 220)); // Descripción
+  agregarAireColumnas(hoja, cols);
 }
 
 // --- Resumen mensual ---
@@ -437,6 +459,7 @@ function escribirResumenMensual(mesesAsc) {
 
   if (filas.length > 0) {
     hoja.getRange(2, 1, filas.length, cols).setValues(filas);
+    ajustarFilasDatos(hoja, filas.length);
     formatoMoneda(hoja.getRange(2, 2, filas.length, 1));
     formatoMoneda(hoja.getRange(2, 4, filas.length, 5));
 
@@ -462,6 +485,7 @@ function escribirResumenMensual(mesesAsc) {
   hoja.setFrozenRows(1);
   hoja.setRowHeight(1, 30);
   hoja.autoResizeColumns(1, cols);
+  agregarAireColumnas(hoja, cols);
 }
 
 // --- Panel: portada con KPIs del mes y grafico de evolucion ---
@@ -635,6 +659,7 @@ function escribirClientas(clientas) {
 
   if (filas.length > 0) {
     hoja.getRange(2, 1, filas.length, cols).setValues(filas);
+    ajustarFilasDatos(hoja, filas.length);
     aplicarBandas(hoja.getRange(1, 1, filas.length + 1, cols));
     hoja.getRange(1, 1, filas.length + 1, cols).createFilter();
   }
@@ -645,6 +670,7 @@ function escribirClientas(clientas) {
   hoja.setRowHeight(1, 30);
   hoja.autoResizeColumns(1, cols);
   hoja.setColumnWidth(3, Math.max(hoja.getColumnWidth(3), 220)); // Nota
+  agregarAireColumnas(hoja, cols);
 }
 
 // --- Pedidos ---
@@ -693,6 +719,7 @@ function escribirPedidos(pedidos, clientas) {
 
   if (filas.length > 0) {
     hoja.getRange(2, 1, filas.length, cols).setValues(filas);
+    ajustarFilasDatos(hoja, filas.length);
     formatoMoneda(hoja.getRange(2, 5, filas.length, 3));
     // ID venta vinculada es un dato tecnico de cruce, igual que ID venta en
     // la pestaña Ventas: se achica para no competir con las columnas que
@@ -708,6 +735,7 @@ function escribirPedidos(pedidos, clientas) {
   hoja.setRowHeight(1, 30);
   hoja.autoResizeColumns(1, cols);
   hoja.setColumnWidth(4, Math.max(hoja.getColumnWidth(4), 220)); // Productos
+  agregarAireColumnas(hoja, cols);
 }
 
 // --- Contenido ---
@@ -759,6 +787,7 @@ function escribirPublicaciones(publicaciones, productos) {
 
   if (filas.length > 0) {
     hoja.getRange(2, 1, filas.length, cols).setValues(filas);
+    ajustarFilasDatos(hoja, filas.length);
     aplicarBandas(hoja.getRange(1, 1, filas.length + 1, cols));
     hoja.getRange(1, 1, filas.length + 1, cols).createFilter();
   }
@@ -770,6 +799,7 @@ function escribirPublicaciones(publicaciones, productos) {
   hoja.autoResizeColumns(1, cols);
   hoja.setColumnWidth(4, Math.max(hoja.getColumnWidth(4), 200)); // Título
   hoja.setColumnWidth(8, Math.max(hoja.getColumnWidth(8), 220)); // Copy
+  agregarAireColumnas(hoja, cols);
 }
 
 // --- Tareas ---
@@ -789,6 +819,7 @@ function escribirTareas(tareas) {
 
   if (filas.length > 0) {
     hoja.getRange(2, 1, filas.length, cols).setValues(filas);
+    ajustarFilasDatos(hoja, filas.length);
 
     // Igual que en Resumen mensual: lo urgente en rojo, para no tener que
     // leer fila por fila.
@@ -808,6 +839,7 @@ function escribirTareas(tareas) {
   hoja.setRowHeight(1, 30);
   hoja.autoResizeColumns(1, cols);
   hoja.setColumnWidth(1, Math.max(hoja.getColumnWidth(1), 260)); // Texto
+  agregarAireColumnas(hoja, cols);
 }
 
 function ordenarPestanas() {
