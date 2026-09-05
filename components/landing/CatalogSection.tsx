@@ -24,12 +24,18 @@ export default function CatalogSection({
   const { piso, tope } = rangoPrecios(productos);
   const [precioMin, setPrecioMin] = useState(piso);
   const [precioMax, setPrecioMax] = useState(tope);
-
-  // Sincronizar extremos si el catálogo cambia (ej: se agregan productos)
-  useEffect(() => {
+  // Ajustar estado durante el render en vez de en un efecto (patron oficial
+  // de React para "resetear estado cuando cambia una prop"): evita el
+  // render de mas que un efecto siempre agrega, y saca el error de lint
+  // react-hooks/set-state-in-effect. Un ref no sirve aca: React prohibe
+  // mutar refs durante el render (react-hooks/refs), asi que el "previo"
+  // se guarda en estado, igual que precioMin/precioMax.
+  const [rangoPrevio, setRangoPrevio] = useState({ piso, tope });
+  if (rangoPrevio.piso !== piso || rangoPrevio.tope !== tope) {
+    setRangoPrevio({ piso, tope });
     setPrecioMin(piso);
     setPrecioMax(tope);
-  }, [piso, tope]);
+  }
 
   // La Navbar emite este evento al clickear Maquillajes/Skincare
   useEffect(() => {
