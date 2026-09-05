@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Jost } from "next/font/google";
 import { MotionConfig } from "framer-motion";
-import { config } from "@/lib/config";
+import { config, siteUrl } from "@/lib/config";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -16,9 +16,7 @@ const jost = Jost({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-  ),
+  metadataBase: new URL(siteUrl()),
   title: `${config.marca} | Make Up & Skin Care Importado 💄`,
   description: config.tagline,
   // Sin esto, Google puede llegar a indexar por separado la URL real y una

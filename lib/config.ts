@@ -9,11 +9,16 @@ export const config = {
     "Encargá tus favoritos con un 50% de seña. Llegan con nuestro próximo pedido.",
 };
 
-// Sin la barra final: si NEXT_PUBLIC_SITE_URL se carga con "/" al final (fue
-// el caso en Vercel), concatenar un path a mano duplicaba la barra —
-// robots.txt terminaba apuntando al sitemap con "//sitemap.xml".
+// Sin la barra final: si SITE_URL se carga con "/" al final (fue el caso en
+// Vercel), concatenar un path a mano duplicaba la barra — robots.txt
+// terminaba apuntando al sitemap con "//sitemap.xml".
+//
+// Sin prefijo NEXT_PUBLIC_: es la URL publica del sitio (ya visible en el
+// sitemap, robots.txt, canonical y el JSON-LD de cada pagina), pero no la
+// necesita ningun componente cliente — todo lo que la usa corre en el
+// servidor (robots.ts, sitemap.ts, layout.tsx, OrganizationJsonLd.tsx).
 export function siteUrl(): string {
-  const url = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const url = process.env.SITE_URL ?? "http://localhost:3000";
   return url.replace(/\/+$/, "");
 }
 

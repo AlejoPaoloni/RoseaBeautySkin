@@ -82,7 +82,7 @@ dedicado solo para la sincro.
 
 1. Subir el repo a GitHub.
 2. En [vercel.com](https://vercel.com): **New Project** → importar el repo.
-3. Agregar las dos env vars de arriba, más `NEXT_PUBLIC_SITE_URL` con la URL final (ej: `https://catalogo-rb.vercel.app`) para que la imagen de preview (og:image) funcione al compartir el link.
+3. Agregar las dos env vars de arriba, más `SITE_URL` con la URL final (ej: `https://catalogo-rb.vercel.app`) para que la imagen de preview (og:image) funcione al compartir el link.
 4. Deploy. Cada push a `main` redeploya solo.
 
 ## Personalizar (sin tocar componentes)
