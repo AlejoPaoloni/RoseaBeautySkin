@@ -25,3 +25,26 @@ export async function obtenerProductos(): Promise<ResultadoProductos> {
     return { productos: [], huboError: true };
   }
 }
+
+// Lectura publica de un solo producto, para la pagina de detalle.
+// null = no existe o Supabase no esta configurado/fallo (la pagina lo trata
+// como 404 en ambos casos: no hay nada mas que mostrarle a la visita).
+export async function obtenerProductoPorId(
+  id: string
+): Promise<Producto | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon) return null;
+  try {
+    const supabase = createClient(url, anon);
+    const { data, error } = await supabase
+      .from("productos")
+      .select("*")
+      .eq("id", id)
+      .single();
+    if (error || !data) return null;
+    return data as Producto;
+  } catch {
+    return null;
+  }
+}

@@ -3,7 +3,13 @@
 import { useState } from "react";
 import type { Categoria, Estado, Producto, Tono } from "@/lib/types";
 import { CATEGORIAS, ESTADOS, SUBCATEGORIAS } from "@/lib/types";
-import { actualizarProducto, crearProducto, reemplazarImagen } from "@/lib/db";
+import {
+  actualizarProducto,
+  crearProducto,
+  eliminarImagenAnterior,
+  reemplazarImagen,
+  subirImagen,
+} from "@/lib/db";
 import { formatearPrecio } from "@/lib/catalog";
 import { comprimirImagen } from "@/lib/imagen";
 
@@ -18,6 +24,9 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
   const [marca, setMarca] = useState(producto?.marca ?? "");
   const [descripcion, setDescripcion] = useState(
     producto?.descripcion_corta ?? ""
+  );
+  const [descripcionLarga, setDescripcionLarga] = useState(
+    producto?.descripcion_larga ?? ""
   );
   const [precio, setPrecio] = useState(
     producto ? String(producto.precio) : ""
@@ -46,6 +55,20 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
   const [preview, setPreview] = useState<string | null>(
     producto?.imagen_url ?? null
   );
+  // Fotos adicionales para la galería del detalle (portada + hasta 2 más).
+  // url = la que ya está subida; archivo = una nueva elegida para ese lugar
+  // (todavía sin subir). Al guardar, lo que no quede en la lista final se
+  // borra del bucket (cubre tanto "la saqué" como "la reemplacé").
+  const [fotosExtra, setFotosExtra] = useState<
+    { url: string | null; archivo: File | null; preview: string | null }[]
+  >(
+    (producto?.imagenes_extra ?? []).map((url) => ({
+      url,
+      archivo: null,
+      preview: url,
+    }))
+  );
+  const MAX_FOTOS_EXTRA = 2;
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,6 +94,23 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
   function elegirArchivo(f: File | null) {
     setArchivo(f);
     if (f) setPreview(URL.createObjectURL(f));
+  }
+
+  function agregarFotoExtra() {
+    setFotosExtra([...fotosExtra, { url: null, archivo: null, preview: null }]);
+  }
+
+  function elegirFotoExtra(i: number, f: File | null) {
+    if (!f) return;
+    setFotosExtra(
+      fotosExtra.map((foto, j) =>
+        j === i ? { ...foto, archivo: f, preview: URL.createObjectURL(f) } : foto
+      )
+    );
+  }
+
+  function quitarFotoExtra(i: number) {
+    setFotosExtra(fotosExtra.filter((_, j) => j !== i));
   }
 
   function agregarTono() {
@@ -135,6 +175,27 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
           producto?.imagen_url ?? null
         );
       }
+      // Fotos adicionales: subir las nuevas, dejar las que ya estaban.
+      const imagenesExtra: string[] = [];
+      for (const foto of fotosExtra) {
+        if (foto.archivo) {
+          const blob = await comprimirImagen(foto.archivo);
+          imagenesExtra.push(
+            await subirImagen(blob, `${crypto.randomUUID()}.webp`)
+          );
+        } else if (foto.url) {
+          imagenesExtra.push(foto.url);
+        }
+      }
+      // Lo que tenía el producto y ya no quedó en la lista final: se sacó o
+      // se reemplazó. Se borra del bucket para no dejar archivos huérfanos.
+      const extraAnteriores = producto?.imagenes_extra ?? [];
+      await Promise.all(
+        extraAnteriores
+          .filter((url) => !imagenesExtra.includes(url))
+          .map(eliminarImagenAnterior)
+      );
+
       const tonosLimpios = tonos
         .map((t) => ({ ...t, nombre: t.nombre.trim() }))
         .filter((t) => t.nombre !== "");
@@ -142,7 +203,9 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
         nombre: nombre.trim(),
         marca: marca.trim() || null,
         descripcion_corta: descripcion.trim(),
+        descripcion_larga: descripcionLarga.trim() || null,
         imagen_url,
+        imagenes_extra: imagenesExtra.length > 0 ? imagenesExtra : null,
         categoria,
         subcategoria,
         estado,
@@ -201,6 +264,18 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
             maxLength={150}
             rows={3}
             onChange={(e) => setDescripcion(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-rosea-300"
+          />
+        </label>
+
+        <label className="mt-4 block text-sm text-neutral-600">
+          Descripción completa ({descripcionLarga.length}/800)
+          <textarea
+            value={descripcionLarga}
+            maxLength={800}
+            rows={5}
+            placeholder="Qué es, para qué sirve, modo de uso... Se muestra en la página de detalle del producto."
+            onChange={(e) => setDescripcionLarga(e.target.value)}
             className="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-rosea-300"
           />
         </label>
@@ -365,7 +440,7 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
         </div>
 
         <label className="mt-4 block text-sm text-neutral-600">
-          Imagen
+          Foto principal (la de la card)
           <input
             type="file"
             accept="image/*"
@@ -381,6 +456,55 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
             className="mt-3 h-32 w-32 rounded-lg object-cover"
           />
         )}
+
+        <div className="mt-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-neutral-600">
+              Fotos adicionales (para el detalle)
+            </span>
+            {fotosExtra.length < MAX_FOTOS_EXTRA && (
+              <button
+                type="button"
+                onClick={agregarFotoExtra}
+                className="rounded-full bg-rosea-50 px-3 py-1 text-xs text-rosea-700 hover:bg-rosea-100"
+              >
+                + Agregar foto
+              </button>
+            )}
+          </div>
+          {fotosExtra.length > 0 && (
+            <div className="mt-2 space-y-2">
+              {fotosExtra.map((foto, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  {foto.preview && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={foto.preview}
+                      alt={`Preview foto adicional ${i + 1}`}
+                      className="h-12 w-12 shrink-0 rounded-lg object-cover"
+                    />
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) =>
+                      elegirFotoExtra(i, e.target.files?.[0] ?? null)
+                    }
+                    className="block w-full text-xs text-neutral-500 file:mr-3 file:rounded-full file:border-0 file:bg-rosea-50 file:px-3 file:py-1.5 file:text-xs file:text-rosea-700"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => quitarFotoExtra(i)}
+                    aria-label={`Quitar foto adicional ${i + 1}`}
+                    className="shrink-0 rounded-full px-2 py-1 text-sm text-neutral-400 hover:bg-red-50 hover:text-red-500"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {error && <p className="mt-3 text-sm text-red-500">{error}</p>}
 

@@ -46,6 +46,8 @@ function producto(over: Partial<Producto> = {}): Producto {
     marca: null,
     descripcion_corta: null,
     imagen_url: null,
+    descripcion_larga: null,
+    imagenes_extra: null,
     categoria: "Maquillajes",
     subcategoria: "Labios",
     estado: "Disponible",

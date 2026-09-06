@@ -5,6 +5,10 @@ create table public.productos (
   marca text,
   descripcion_corta varchar(150),
   imagen_url text,
+  -- Descripción completa para la página de detalle (opcional: sin ella se
+  -- muestra la corta). Hasta 2 fotos adicionales además de imagen_url.
+  descripcion_larga text,
+  imagenes_extra text[],
   categoria text not null check (categoria in ('Maquillajes', 'Skincare')),
   subcategoria text not null check (subcategoria in (
     'Rostro', 'Ojos', 'Labios', 'Skincare'

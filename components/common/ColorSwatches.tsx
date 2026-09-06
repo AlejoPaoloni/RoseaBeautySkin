@@ -56,6 +56,10 @@ export default function ColorSwatches({ tonos }: { tonos: Tono[] }) {
             onMouseEnter={() => mostrar(tono.hex)}
             onMouseLeave={() => setAbierto(null)}
             onClick={(e) => {
+              // preventDefault, no solo stopPropagation: la card entera es
+              // un Link al detalle, y sin esto tocar un tono navegaría (el
+              // <a> activa con el click igual, propagacion aparte).
+              e.preventDefault();
               e.stopPropagation();
               mostrar(tono.hex);
             }}
