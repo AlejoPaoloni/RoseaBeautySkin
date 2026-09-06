@@ -2,6 +2,10 @@ import type { MetadataRoute } from "next";
 import { siteUrl } from "@/lib/config";
 import { obtenerProductos } from "@/lib/supabase/server";
 
+// El sitemap ahora depende del catalogo: sin esto queda congelado con
+// los productos que habia al momento del build.
+export const revalidate = 3600;
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const { productos } = await obtenerProductos();
   return [
