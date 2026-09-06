@@ -120,6 +120,15 @@ export function formatearPrecio(precio: number): string {
   });
 }
 
+// Fotos del producto para la galería del detalle: la portada primero, y
+// después las adicionales (si tiene). Filtra huecos por si alguna quedó
+// null en el array.
+export function imagenesProducto(producto: Producto): string[] {
+  return [producto.imagen_url, ...(producto.imagenes_extra ?? [])].filter(
+    (url): url is string => !!url
+  );
+}
+
 export function productosDestacados(productos: Producto[]): Producto[] {
   return ordenarProductos(productos.filter((p) => p.destacado));
 }

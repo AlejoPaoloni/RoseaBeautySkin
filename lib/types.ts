@@ -12,6 +12,10 @@ export interface Producto {
   marca: string | null;
   descripcion_corta: string | null;
   imagen_url: string | null;
+  // Descripción completa para la página de detalle. null = usar la corta.
+  descripcion_larga: string | null;
+  // Hasta 2 fotos además de imagen_url, para la galería del detalle.
+  imagenes_extra: string[] | null;
   categoria: Categoria;
   subcategoria: string;
   estado: Estado;

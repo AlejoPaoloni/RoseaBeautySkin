@@ -6,7 +6,16 @@ import type { Tono } from "@/lib/types";
 const MARGEN = 8;
 const MITAD_TOOLTIP = 64; // max-w-32 (128px) / 2
 
-export default function ColorSwatches({ tonos }: { tonos: Tono[] }) {
+export default function ColorSwatches({
+  tonos,
+  // En el detalle los tonos son mas grandes y con area de toque comoda para
+  // el dedo (44px con el pseudo-elemento); en las cards siguen chicos, que
+  // ahi son un dato de la ficha y no algo para tocar.
+  grande = false,
+}: {
+  tonos: Tono[];
+  grande?: boolean;
+}) {
   const [abierto, setAbierto] = useState<string | null>(null);
   const [corrimiento, setCorrimiento] = useState(0);
   const raiz = useRef<HTMLDivElement>(null);
@@ -41,7 +50,7 @@ export default function ColorSwatches({ tonos }: { tonos: Tono[] }) {
   }
 
   return (
-    <div ref={raiz} className="mt-2 flex items-center gap-2">
+    <div ref={raiz} className={`flex items-center gap-2 ${grande ? "mt-3" : "mt-2"}`}>
       {tonos.map((tono) => (
         <div key={tono.hex} className="relative">
           <button
@@ -49,13 +58,17 @@ export default function ColorSwatches({ tonos }: { tonos: Tono[] }) {
               botones.current[tono.hex] = el;
             }}
             aria-label={`Tono: ${tono.nombre}`}
-            className={`h-6 w-6 rounded-full border border-neutral-200 transition-transform hover:scale-125 ${
-              abierto === tono.hex ? "scale-125" : ""
-            }`}
+            className={`relative rounded-full border border-neutral-200 transition-transform after:absolute after:content-[''] hover:scale-125 ${
+              grande ? "h-8 w-8 after:-inset-1.5" : "h-6 w-6"
+            } ${abierto === tono.hex ? "scale-125" : ""}`}
             style={{ backgroundColor: tono.hex }}
             onMouseEnter={() => mostrar(tono.hex)}
             onMouseLeave={() => setAbierto(null)}
             onClick={(e) => {
+              // preventDefault, no solo stopPropagation: la card entera es
+              // un Link al detalle, y sin esto tocar un tono navegaría (el
+              // <a> activa con el click igual, propagacion aparte).
+              e.preventDefault();
               e.stopPropagation();
               mostrar(tono.hex);
             }}

@@ -42,7 +42,9 @@ function pathEnBucket(imagenUrl: string | null): string | null {
 // No se relanza: quien llama ya completo su operacion principal (borrar el
 // producto, o subir la foto nueva), y esto es prolijeza de fondo — en el
 // peor caso queda un archivo huerfano ocupando espacio, no algo roto.
-async function eliminarImagenAnterior(imagenUrl: string | null): Promise<void> {
+export async function eliminarImagenAnterior(
+  imagenUrl: string | null
+): Promise<void> {
   const path = pathEnBucket(imagenUrl);
   if (!path) return;
   const { error } = await createClient().storage
