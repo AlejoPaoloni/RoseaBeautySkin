@@ -4,8 +4,12 @@ import Image from "next/image";
 import { useState } from "react";
 
 // Galeria simple de 1 a 3 fotos: la grande arriba, miniaturas clickeables
-// abajo si hay mas de una. Sin libreria de carrusel — con este maximo de
-// fotos alcanza y sobra.
+// abajo si hay mas de una (con una sola foto no hay miniaturas). Sin
+// libreria de carrusel — con este maximo de fotos alcanza y sobra.
+//
+// object-contain, no cover: la foto se ve entera como la subio la duena,
+// aunque no sea cuadrada. Recortar para llenar el cuadro le comia medio
+// producto a las fotos verticales.
 export default function ProductGallery({
   imagenes,
   alt,
@@ -29,7 +33,7 @@ export default function ProductGallery({
           fill
           sizes="(max-width: 1024px) 100vw, 50vw"
           priority
-          className="object-cover"
+          className="object-contain"
         />
       </div>
       {imagenes.length > 1 && (
@@ -45,7 +49,7 @@ export default function ProductGallery({
                 i === activa ? "ring-rosea-400" : "ring-transparent"
               }`}
             >
-              <Image src={src} alt="" fill sizes="64px" className="object-cover" />
+              <Image src={src} alt="" fill sizes="64px" className="object-contain p-1" />
             </button>
           ))}
         </div>

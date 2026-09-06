@@ -14,6 +14,7 @@ import ColorSwatches from "@/components/common/ColorSwatches";
 import Footer from "@/components/landing/Footer";
 import InstagramButton from "@/components/landing/InstagramButton";
 import ProductGallery from "@/components/landing/ProductGallery";
+import ShareProductButton from "@/components/landing/ShareProductButton";
 
 export const revalidate = 60;
 
@@ -128,6 +129,8 @@ export default async function ProductoDetallePage({ params }: Props) {
               </svg>
               Consultar
             </a>
+
+            <ShareProductButton producto={producto} />
           </div>
         </div>
       </div>
