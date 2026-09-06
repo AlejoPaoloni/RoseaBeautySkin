@@ -1,44 +1,33 @@
 import { formatearPrecio, tienePrecioPublico } from "@/lib/catalog";
 import type { Producto } from "@/lib/types";
 
-// Comparte un producto a cualquier red: en mobile con Web Share soportado
-// abre el panel nativo (con imagen si se puede traer sin CORS, nombre y
-// precio); si no hay Web Share (desktop / navegador viejo) copia el texto
-// al portapapeles para que se pueda pegar donde sea.
-// Devuelve true si se pudo compartir o copiar, false si el usuario cancelo.
+// Link directo al detalle del producto. Se arma con el id y no con la URL
+// de la pagina actual para que nunca viaje con parametros pegados (?utm,
+// ?_vercel_share) ni dependa de desde donde se comparta.
+export function urlProducto(producto: Producto): string {
+  const origen = typeof window !== "undefined" ? window.location.origin : "";
+  return `${origen}/producto/${producto.id}`;
+}
+
+// Comparte el producto como LINK, no como foto adjunta: WhatsApp e Instagram
+// arman solos la vista previa (foto, nombre y precio salen del Open Graph de
+// la pagina del producto) y al tocarla la clienta cae en ese detalle. Mandar
+// la imagen como archivo hacia justo lo contrario: llegaba una foto suelta y
+// el link aparte, sin previa y sin nada en que tocar.
+//
+// En desktop, o en navegadores sin Web Share, copia el texto con el link al
+// portapapeles. Devuelve true si se compartio o copio, false si se cancelo.
 export async function compartirProducto(producto: Producto): Promise<boolean> {
   // Un por encargo se comparte sin precio: se cotiza por consulta, mandar un
   // numero por WhatsApp seria contradecir a la card.
   const texto = tienePrecioPublico(producto)
     ? `${producto.nombre} - ${formatearPrecio(producto.precio)}`
     : `${producto.nombre} - precio a consultar`;
-  const url = typeof window !== "undefined" ? window.location.href : "";
+  const url = urlProducto(producto);
 
   if (typeof navigator !== "undefined" && navigator.share) {
-    let files: File[] | undefined;
     try {
-      if (producto.imagen_url && navigator.canShare) {
-        const res = await fetch(producto.imagen_url);
-        const blob = await res.blob();
-        const nombreArchivo =
-          producto.imagen_url.split("/").pop()?.split("?")[0] || "producto.jpg";
-        const file = new File([blob], nombreArchivo, {
-          type: blob.type || "image/jpeg",
-        });
-        if (navigator.canShare({ files: [file] })) files = [file];
-      }
-    } catch {
-      // La imagen es de un CDN externo (Sephora): si el fetch falla por CORS
-      // u otra razon, compartimos igual pero sin adjuntarla.
-    }
-
-    try {
-      await navigator.share({
-        title: producto.nombre,
-        text: texto,
-        url,
-        ...(files ? { files } : {}),
-      });
+      await navigator.share({ title: producto.nombre, text: texto, url });
       return true;
     } catch {
       // Usuario cancelo el panel nativo.
