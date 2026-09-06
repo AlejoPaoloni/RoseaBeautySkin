@@ -12,9 +12,9 @@ import { useRef, useState } from "react";
 // aunque no sea cuadrada. Recortar para llenar el cuadro le comia medio
 // producto a las fotos verticales.
 //
-// El marco es 4/5 en el celular (aprovecha el ancho de la pantalla en las
-// fotos verticales, que son la mayoria) y cuadrado en desktop, donde
-// comparte fila con los datos del producto.
+// En el celular el marco se mide contra el alto de la pantalla (38vh) para
+// que nombre, precio y botones entren sin scrollear; en desktop es cuadrado,
+// donde comparte fila con los datos del producto.
 export default function ProductGallery({
   imagenes,
   alt,
@@ -26,7 +26,7 @@ export default function ProductGallery({
   const pista = useRef<HTMLDivElement>(null);
 
   if (imagenes.length === 0) {
-    return <div className="aspect-[4/5] rounded-2xl bg-rosea-50 md:aspect-square" />;
+    return <div className="h-[38vh] rounded-2xl bg-rosea-50 md:h-auto md:aspect-square" />;
   }
 
   function irA(i: number) {
@@ -46,11 +46,11 @@ export default function ProductGallery({
   }
 
   return (
-    <div>
+    <div className="relative">
       <div
         ref={pista}
         onScroll={alDeslizar}
-        className="flex aspect-[4/5] snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-2xl bg-rosea-50 [-ms-overflow-style:none] [scrollbar-width:none] md:aspect-square [&::-webkit-scrollbar]:hidden"
+        className="flex h-[38vh] snap-x snap-mandatory overflow-x-auto overscroll-x-contain rounded-2xl bg-rosea-50 [-ms-overflow-style:none] [scrollbar-width:none] md:h-auto md:aspect-square [&::-webkit-scrollbar]:hidden"
       >
         {imagenes.map((src, i) => (
           <div key={src} className="relative h-full w-full shrink-0 snap-center">
@@ -65,8 +65,27 @@ export default function ProductGallery({
           </div>
         ))}
       </div>
+      {/* En el celular el indicador va sobre la foto (no suma alto: la ficha
+          tiene que entrar entera en una pantalla) y se navega deslizando;
+          las miniaturas quedan para desktop, donde hay lugar de sobra. */}
       {imagenes.length > 1 && (
-        <div className="mt-3 flex gap-2">
+        <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-white/70 px-2.5 py-1.5 backdrop-blur-sm md:hidden">
+          {imagenes.map((src, i) => (
+            <button
+              key={src}
+              type="button"
+              onClick={() => irA(i)}
+              aria-label={`Ver foto ${i + 1} de ${alt}`}
+              aria-current={i === activa}
+              className={`h-1.5 rounded-full transition-all ${
+                i === activa ? "w-4 bg-rosea-500" : "w-1.5 bg-rosea-300"
+              }`}
+            />
+          ))}
+        </div>
+      )}
+      {imagenes.length > 1 && (
+        <div className="mt-3 hidden gap-2 md:flex">
           {imagenes.map((src, i) => (
             <button
               key={src}

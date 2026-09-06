@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Categoria, Producto } from "@/lib/types";
 import { filtrarProductos, ordenarParaCatalogo, rangoPrecios } from "@/lib/catalog";
+import {
+  guardarFiltrosCatalogo,
+  leerVueltaAlCatalogo,
+  olvidarVuelta,
+} from "@/lib/catalogoEstado";
 import FilterBar from "./FilterBar";
 import ProductCard from "./ProductCard";
 
@@ -36,6 +41,58 @@ export default function CatalogSection({
     setPrecioMin(piso);
     setPrecioMax(tope);
   }
+
+  // Volver del detalle de un producto tiene que devolver el catalogo tal
+  // como estaba: mismos filtros y misma altura. Va en un efecto (y no en el
+  // estado inicial) porque sessionStorage no existe en el server y leerlo
+  // durante el render romperia la hidratacion.
+  const yaRestauro = useRef(false);
+  useEffect(() => {
+    const vuelta = leerVueltaAlCatalogo();
+    if (!vuelta) {
+      yaRestauro.current = true;
+      return;
+    }
+    // Los setState van dentro del frame siguiente y no en el cuerpo del
+    // efecto: asi lo pide react-hooks/set-state-in-effect, la misma regla
+    // que ya obligo a mover el reseteo del rango de precios al render.
+    const frame = requestAnimationFrame(() => {
+      olvidarVuelta();
+      const f = vuelta.filtros;
+      if (f) {
+        setCategoria(f.categoria);
+        setSubcategoria(f.subcategoria);
+        setSoloDisponibles(f.soloDisponibles);
+        setBusqueda(f.busqueda);
+        setPrecioMin(f.precioMin);
+        setPrecioMax(f.precioMax);
+      }
+      // Recien ahora se habilita el guardado: si se habilitara antes, este
+      // mismo montaje pisaria los filtros guardados con los vacios que
+      // tiene el primer render (y el doble montaje de StrictMode se llevaba
+      // puesta la restauracion entera).
+      yaRestauro.current = true;
+      // Otro frame mas: el scroll recien tiene sentido cuando la grilla ya
+      // se pinto con los filtros repuestos y volvio a su altura de antes.
+      requestAnimationFrame(() =>
+        window.scrollTo({ top: vuelta.scrollY, behavior: "instant" })
+      );
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  // Lo que se guarda es lo que se repone al volver.
+  useEffect(() => {
+    if (!yaRestauro.current) return;
+    guardarFiltrosCatalogo({
+      categoria,
+      subcategoria,
+      soloDisponibles,
+      busqueda,
+      precioMin,
+      precioMax,
+    });
+  }, [categoria, subcategoria, soloDisponibles, busqueda, precioMin, precioMax]);
 
   // La Navbar emite este evento al clickear Maquillajes/Skincare
   useEffect(() => {

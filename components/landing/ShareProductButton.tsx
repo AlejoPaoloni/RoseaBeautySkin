@@ -27,7 +27,7 @@ export default function ShareProductButton({
       type="button"
       onClick={onCompartir}
       aria-label={`Compartir ${producto.nombre}`}
-      className="mt-3 flex items-center justify-center gap-2 rounded-full py-3 text-sm font-medium text-rosea-500 ring-1 ring-rosea-200 transition-colors hover:bg-rosea-50 md:max-w-xs"
+      className="flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-medium text-rosea-500 ring-1 ring-rosea-200 transition-colors hover:bg-rosea-50 md:mt-3 md:w-full md:max-w-xs md:px-0"
     >
       {compartido ? (
         <>
