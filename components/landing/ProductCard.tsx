@@ -9,6 +9,7 @@ import {
   formatearPrecio,
   tienePrecioPublico,
 } from "@/lib/catalog";
+import { marcarVueltaAlCatalogo } from "@/lib/catalogoEstado";
 import type { Producto } from "@/lib/types";
 import ColorSwatches from "@/components/common/ColorSwatches";
 
@@ -39,6 +40,9 @@ export default function ProductCard({
       href={`/producto/${producto.id}`}
       className="contents"
       aria-label={`Ver detalle de ${producto.nombre}`}
+      // Deja anotado donde estaba el catalogo para que "Volver al catalogo"
+      // devuelva a la misma altura y con los mismos filtros.
+      onClick={marcarVueltaAlCatalogo}
     >
       <motion.article
         layout={!estatico}
