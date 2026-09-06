@@ -12,7 +12,6 @@ import { config, instagramDmUrl } from "@/lib/config";
 import { obtenerProductoPorId } from "@/lib/supabase/server";
 import ColorSwatches from "@/components/common/ColorSwatches";
 import Footer from "@/components/landing/Footer";
-import InstagramButton from "@/components/landing/InstagramButton";
 import ProductGallery from "@/components/landing/ProductGallery";
 import ShareProductButton from "@/components/landing/ShareProductButton";
 
@@ -55,12 +54,14 @@ export default async function ProductoDetallePage({ params }: Props) {
     <main>
       <header className="border-b border-rosea-100 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link href="/" aria-label="Inicio">
+          <Link href="/" aria-label="Inicio" className="-m-2 p-2">
             <Image src="/brand/monogram.svg" alt="RB" width={44} height={33} />
           </Link>
           <Link
             href="/"
-            className="flex items-center gap-1.5 text-sm text-neutral-600 transition-colors hover:text-rosea-500"
+            // -mr-2/px-2/py-3: area de toque comoda en el celular sin
+            // correr el texto del borde.
+            className="-mr-2 flex items-center gap-1.5 px-2 py-3 text-sm text-neutral-600 transition-colors hover:text-rosea-500"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
               <path d="M19 12H5M12 19l-7-7 7-7" />
@@ -98,7 +99,7 @@ export default async function ProductoDetallePage({ params }: Props) {
             </h1>
 
             {producto.tonos && producto.tonos.length > 0 && (
-              <ColorSwatches tonos={producto.tonos} />
+              <ColorSwatches tonos={producto.tonos} grande />
             )}
 
             {tienePrecioPublico(producto) ? (
@@ -136,7 +137,6 @@ export default async function ProductoDetallePage({ params }: Props) {
       </div>
 
       <Footer />
-      <InstagramButton />
     </main>
   );
 }
