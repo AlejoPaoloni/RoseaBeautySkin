@@ -35,10 +35,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `${producto.nombre} | ${config.marca}`,
     description: descripcion,
     alternates: { canonical: `/producto/${producto.id}` },
+    // Sin images aca: la vista previa la arma opengraph-image.tsx, que
+    // devuelve PNG (las fotos del bucket son .webp y WhatsApp no las lee).
     openGraph: {
       title: producto.nombre,
       description: descripcion,
-      images: producto.imagen_url ? [producto.imagen_url] : undefined,
+      type: "website",
     },
   };
 }
