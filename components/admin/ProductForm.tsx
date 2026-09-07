@@ -38,7 +38,7 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
     producto?.stock != null ? String(producto.stock) : ""
   );
   const [stockMinimo, setStockMinimo] = useState(
-    String(producto?.stock_minimo ?? 2)
+    String(producto?.stock_minimo ?? 1)
   );
   const [categoria, setCategoria] = useState<Categoria>(
     producto?.categoria ?? "Maquillajes"
