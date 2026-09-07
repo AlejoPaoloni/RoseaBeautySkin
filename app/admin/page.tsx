@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import type { Estado, Producto } from "@/lib/types";
-import { CATEGORIAS } from "@/lib/types";
+import { CATEGORIAS, ESTADOS } from "@/lib/types";
 import type { Categoria } from "@/lib/types";
-import { agruparPorSubcategoria } from "@/lib/catalog";
+import { agruparPorEstado, agruparPorSubcategoria } from "@/lib/catalog";
 import { productosStockBajo } from "@/lib/gestion";
 import {
   actualizarProducto,
@@ -25,6 +25,14 @@ import {
   arrayMove,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+
+// Mismos colores que el badge de estado en la card publica, para que el
+// admin use el mismo codigo visual.
+const ESTADO_COLOR: Record<Estado, string> = {
+  Disponible: "text-emerald-700",
+  "Por Encargo": "text-amber-800",
+  "Sin stock": "text-red-600",
+};
 
 export default function AdminPage() {
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -90,7 +98,9 @@ export default function AdminPage() {
     return async (event: DragEndEvent) => {
       const { active, over } = event;
       if (!over || active.id === over.id) return;
-      const grupo = agruparPorSubcategoria(productos, cat)[sub];
+      const items = agruparPorSubcategoria(productos, cat)[sub];
+      // Mismo orden que se ve en pantalla: agrupado por estado.
+      const grupo = Object.values(agruparPorEstado(items)).flat();
       const desde = grupo.findIndex((p) => p.id === active.id);
       const hasta = grupo.findIndex((p) => p.id === over.id);
       if (desde === -1 || hasta === -1) return;
@@ -159,7 +169,9 @@ export default function AdminPage() {
             <section key={cat} className="mb-10">
               <h2 className="font-serif text-2xl text-rosea-700">{cat}</h2>
               {Object.entries(agruparPorSubcategoria(productos, cat)).map(
-                ([sub, items]) => (
+                ([sub, items]) => {
+                  const porEstado = agruparPorEstado(items);
+                  return (
                   <div key={sub} className="mt-4">
                     <h3 className="text-sm font-medium uppercase tracking-wider text-neutral-400">
                       {sub}
@@ -169,23 +181,40 @@ export default function AdminPage() {
                       onDragEnd={onDragEnd(cat, sub)}
                     >
                       <SortableContext
-                        items={items.map((p) => p.id)}
+                        items={Object.values(porEstado)
+                          .flat()
+                          .map((p) => p.id)}
                         strategy={verticalListSortingStrategy}
                       >
-                        <div className="mt-2 space-y-2">
-                          {items.map((p) => (
-                            <SortableRow
-                              key={p.id}
-                              producto={p}
-                              onEstado={(e) => cambiarEstado(p, e)}
-                              onDestacado={() => cambiarDestacado(p)}
-                              onEditar={() => {
-                                setEditando(p);
-                                setFormAbierto(true);
-                              }}
-                              onBorrar={() => borrar(p)}
-                            />
-                          ))}
+                        <div className="mt-2 space-y-4">
+                          {ESTADOS.map((estado) => {
+                            const grupo = porEstado[estado];
+                            if (grupo.length === 0) return null;
+                            return (
+                              <div key={estado}>
+                                <p
+                                  className={`mb-1 text-xs font-medium ${ESTADO_COLOR[estado]}`}
+                                >
+                                  {estado} ({grupo.length})
+                                </p>
+                                <div className="space-y-2">
+                                  {grupo.map((p) => (
+                                    <SortableRow
+                                      key={p.id}
+                                      producto={p}
+                                      onEstado={(e) => cambiarEstado(p, e)}
+                                      onDestacado={() => cambiarDestacado(p)}
+                                      onEditar={() => {
+                                        setEditando(p);
+                                        setFormAbierto(true);
+                                      }}
+                                      onBorrar={() => borrar(p)}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
                           {items.length === 0 && (
                             <p className="rounded-lg border border-dashed border-rosea-200 p-3 text-sm text-neutral-400">
                               Sin productos
@@ -195,7 +224,8 @@ export default function AdminPage() {
                       </SortableContext>
                     </DndContext>
                   </div>
-                )
+                  );
+                }
               )}
             </section>
           ))}

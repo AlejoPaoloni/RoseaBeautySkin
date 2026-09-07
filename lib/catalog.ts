@@ -1,5 +1,5 @@
-import type { Categoria, Producto } from "./types";
-import { CATEGORIAS, SUBCATEGORIAS } from "./types";
+import type { Categoria, Estado, Producto } from "./types";
+import { CATEGORIAS, ESTADOS, SUBCATEGORIAS } from "./types";
 
 export function ordenarProductos(productos: Producto[]): Producto[] {
   return [...productos].sort(
@@ -108,6 +108,19 @@ export function agruparPorSubcategoria(
         (p) => p.categoria === categoria && p.subcategoria === sub
       )
     );
+  }
+  return grupos;
+}
+
+// Separa un grupo (ya ordenado por agruparPorSubcategoria) en sus 3 estados,
+// preservando el orden relativo de cada uno. Uso: admin, para que Por
+// Encargo y Sin stock no se mezclen visualmente con los Disponibles.
+export function agruparPorEstado(
+  productos: Producto[]
+): Record<Estado, Producto[]> {
+  const grupos = {} as Record<Estado, Producto[]>;
+  for (const estado of ESTADOS) {
+    grupos[estado] = productos.filter((p) => p.estado === estado);
   }
   return grupos;
 }
