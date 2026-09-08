@@ -19,6 +19,7 @@
  */
 
 var PESTANA_PANEL = "Panel";
+var PESTANA_STOCK = "Stock";
 var PESTANA_VENTAS = "Ventas";
 var PESTANA_GASTOS = "Gastos";
 var PESTANA_RESUMEN = "Resumen mensual";
@@ -45,6 +46,15 @@ var COLOR = {
   gastos: "#4a7fb5",
   positivo: "#2e7d4f",
   negativo: "#c0392b",
+};
+
+// Mismos colores que el badge/encabezado de estado en la web y el admin
+// (ProductCard.tsx / app/admin/page.tsx), para que Stock diga lo mismo con
+// el mismo codigo de color en los 3 lugares.
+var ESTADO_COLOR = {
+  "Disponible": "#047857", // emerald-700
+  "Por Encargo": "#92400e", // amber-800
+  "Sin stock": "#dc2626", // red-600
 };
 
 var FUENTE = "Jost";
@@ -91,13 +101,12 @@ function sincronizar() {
     token,
     "/rest/v1/tareas?select=*&order=created_at.desc"
   );
-  // Solo para resolver nombres (cliente_id -> nombre, producto_id -> nombre):
-  // pedidos ya guarda un snapshot del nombre del producto en cada item, pero
-  // publicacion_productos y pedidos.cliente_id son solo el id.
+  // Ademas de resolver nombres (cliente_id -> nombre, producto_id -> nombre)
+  // en Pedidos/Contenido, alimenta la pestana Stock con el catalogo entero.
   var productos = consultar(
     config,
     token,
-    "/rest/v1/productos?select=id,nombre"
+    "/rest/v1/productos?select=id,nombre,marca,categoria,subcategoria,estado,precio,stock,stock_minimo"
   );
 
   // Un solo calculo mensual, reusado por la tabla de Resumen y por las
@@ -108,6 +117,7 @@ function sincronizar() {
   escribirGastos(gastos);
   escribirResumenMensual(mesesAsc);
   escribirPanel(mesesAsc);
+  escribirStock(productos);
   escribirClientas(clientas);
   escribirPedidos(pedidos, clientas);
   escribirPublicaciones(publicaciones, productos);
@@ -645,6 +655,179 @@ function escribirPanel(mesesAsc) {
   hoja.setColumnWidths(1, ULTIMA_COL, 110);
 }
 
+// --- Stock ---
+
+// Mismo criterio que stockBajo() en lib/gestion.ts: stock cargado (no null,
+// ese producto no lleva control de unidades) y en o por debajo del minimo.
+function stockBajo(p) {
+  return p.stock !== null && p.stock !== undefined && p.stock <= p.stock_minimo;
+}
+
+function escribirStock(productos) {
+  var ULTIMA_COL = 8; // A..H, igual que el Panel
+
+  var disponibles = productos.filter(function (p) { return p.estado === "Disponible"; });
+  var porEncargo = productos.filter(function (p) { return p.estado === "Por Encargo"; });
+  var sinStock = productos.filter(function (p) { return p.estado === "Sin stock"; });
+  var bajoStock = productos.filter(stockBajo);
+
+  var hoja = prepararHoja(PESTANA_STOCK);
+  hoja.getRange(1, 1, hoja.getMaxRows(), ULTIMA_COL).setFontFamily(FUENTE);
+
+  // Barra de titulo, igual que Panel.
+  hoja.getRange(1, 1, 1, ULTIMA_COL).merge();
+  hoja.getRange(1, 1)
+    .setValue("Rosea Beauty · Stock")
+    .setFontSize(20)
+    .setFontWeight("bold")
+    .setFontColor(COLOR.blanco)
+    .setBackground(COLOR.oscuro)
+    .setVerticalAlignment("middle")
+    .setHorizontalAlignment("left");
+  hoja.setRowHeight(1, 48);
+
+  hoja.getRange(2, 1, 1, ULTIMA_COL).merge();
+  hoja.getRange(2, 1)
+    .setValue(
+      "Actualizado " +
+        Utilities.formatDate(new Date(), "America/Argentina/Buenos_Aires", "dd/MM/yyyy HH:mm")
+    )
+    .setFontStyle("italic")
+    .setFontColor(COLOR.textoSuave)
+    .setFontSize(10);
+  hoja.setRowHeight(2, 22);
+
+  // 4 tarjetas en fila, 2 columnas de ancho cada una — mismo patron que Panel,
+  // pero contando productos en vez de sumar pesos.
+  var tarjetas = [
+    { titulo: "DISPONIBLES", valor: disponibles.length, color: ESTADO_COLOR["Disponible"] },
+    { titulo: "SIN STOCK", valor: sinStock.length, color: ESTADO_COLOR["Sin stock"] },
+    { titulo: "POR ENCARGO", valor: porEncargo.length, color: ESTADO_COLOR["Por Encargo"] },
+    { titulo: "STOCK BAJO", valor: bajoStock.length, color: COLOR.oscuro },
+  ];
+  var filaInicio = 4;
+  var altoTarjeta = 3;
+  tarjetas.forEach(function (t, i) {
+    var col = i * 2 + 1;
+    hoja.getRange(filaInicio, col, 1, 2).merge()
+      .setValue(t.titulo)
+      .setFontSize(9)
+      .setFontWeight("bold")
+      .setFontColor(COLOR.oscuro)
+      .setBackground(COLOR.fondo)
+      .setHorizontalAlignment("center");
+
+    hoja.getRange(filaInicio + 1, col, 2, 2).merge()
+      .setValue(t.valor)
+      .setFontSize(26)
+      .setFontWeight("bold")
+      .setFontColor(t.color)
+      .setBackground(COLOR.fondo)
+      .setHorizontalAlignment("center")
+      .setVerticalAlignment("middle");
+  });
+  for (var r = filaInicio; r < filaInicio + altoTarjeta; r++) hoja.setRowHeight(r, r === filaInicio ? 22 : 34);
+  hoja.getRange(filaInicio, 1, altoTarjeta, ULTIMA_COL)
+    .setBorder(true, true, true, true, true, true, COLOR.claro, SpreadsheetApp.BorderStyle.SOLID);
+
+  // Tabla del catalogo entero, la urgente arriba: sin stock (stock=0) antes
+  // que stock bajo, antes que Sin stock sin unidades cargadas, antes que Por
+  // Encargo, y recien despues lo sano — no alfabetico.
+  function rango(p) {
+    if (p.stock === 0) return 0;
+    if (stockBajo(p)) return 1;
+    if (p.estado === "Sin stock") return 2;
+    if (p.estado === "Por Encargo") return 3;
+    return 4;
+  }
+  var ordenados = productos.slice().sort(function (a, b) {
+    return rango(a) - rango(b) || a.nombre.localeCompare(b.nombre, "es");
+  });
+
+  var encabezados = [
+    "Producto", "Marca", "Categoría", "Subcategoría", "Estado", "Precio", "Stock", "Stock mínimo",
+  ];
+  var filaTabla = filaInicio + altoTarjeta + 2;
+  hoja.getRange(filaTabla, 1, 1, ULTIMA_COL).setValues([encabezados]);
+
+  var filas = ordenados.map(function (p) {
+    return [
+      p.nombre,
+      p.marca || "",
+      p.categoria,
+      p.subcategoria,
+      p.estado,
+      p.precio,
+      p.stock === null ? "—" : p.stock,
+      p.stock_minimo,
+    ];
+  });
+
+  if (filas.length > 0) {
+    var rangoDatos = hoja.getRange(filaTabla + 1, 1, filas.length, ULTIMA_COL);
+    rangoDatos.setValues(filas);
+    hoja.setRowHeights(filaTabla + 1, filas.length, 26);
+    rangoDatos.setVerticalAlignment("middle");
+    formatoMoneda(hoja.getRange(filaTabla + 1, 6, filas.length, 1));
+
+    var rangoCompleto = hoja.getRange(filaTabla, 1, filas.length + 1, ULTIMA_COL);
+    aplicarBandas(rangoCompleto);
+    rangoCompleto.createFilter();
+
+    // Color de texto del Estado, igual que el admin. Fondo de fila en rojo
+    // claro si no queda ninguna unidad, ambar claro si esta en o por debajo
+    // del minimo — pisa la banda alterna solo en esas filas puntuales.
+    ordenados.forEach(function (p, i) {
+      var filaHoja = filaTabla + 1 + i;
+      hoja.getRange(filaHoja, 5).setFontColor(ESTADO_COLOR[p.estado] || COLOR.texto);
+      if (p.stock === 0) {
+        hoja.getRange(filaHoja, 1, 1, ULTIMA_COL).setBackground("#fee2e2"); // red-100
+      } else if (stockBajo(p)) {
+        hoja.getRange(filaHoja, 1, 1, ULTIMA_COL).setBackground("#fef3c7"); // amber-100
+      }
+    });
+  }
+
+  estilarEncabezado(hoja.getRange(filaTabla, 1, 1, ULTIMA_COL));
+  hoja.setFrozenRows(filaTabla);
+
+  // Torta de distribucion por estado, a la derecha de la tabla.
+  var filaResumen = filaTabla;
+  var colResumen = ULTIMA_COL + 2;
+  hoja.getRange(filaResumen, colResumen, 1, 2).setValues([["Estado", "Cantidad"]]);
+  hoja.getRange(filaResumen + 1, colResumen, 3, 2).setValues([
+    ["Disponible", disponibles.length],
+    ["Por Encargo", porEncargo.length],
+    ["Sin stock", sinStock.length],
+  ]);
+  var rangoResumen = hoja.getRange(filaResumen, colResumen, 4, 2);
+  var grafico = hoja.newChart()
+    .setChartType(Charts.ChartType.PIE)
+    .addRange(rangoResumen)
+    .setNumHeaders(1)
+    .setPosition(filaTabla, ULTIMA_COL + 5, 0, 0)
+    .setOption("title", "Distribución por estado")
+    .setOption("titleTextStyle", { color: COLOR.oscuro, bold: true, fontName: FUENTE })
+    .setOption("colors", [
+      ESTADO_COLOR["Disponible"],
+      ESTADO_COLOR["Por Encargo"],
+      ESTADO_COLOR["Sin stock"],
+    ])
+    .setOption("legend", { position: "right", textStyle: { fontName: FUENTE } })
+    .setOption("backgroundColor", COLOR.blanco)
+    .setOption("width", 360)
+    .setOption("height", 260)
+    .build();
+  hoja.insertChart(grafico);
+  // La mini tabla que alimenta la torta queda oculta: el numero real ya esta
+  // en la tabla principal de la izquierda, esto es solo el dato del grafico.
+  hoja.hideColumns(colResumen, 2);
+
+  hoja.autoResizeColumns(1, ULTIMA_COL);
+  hoja.setColumnWidth(1, Math.max(hoja.getColumnWidth(1), 240)); // Producto
+  agregarAireColumnas(hoja, ULTIMA_COL);
+}
+
 // --- Clientas ---
 
 function escribirClientas(clientas) {
@@ -844,6 +1027,11 @@ function escribirTareas(tareas) {
 
 function ordenarPestanas() {
   var libro = SpreadsheetApp.getActiveSpreadsheet();
+  var stock = libro.getSheetByName(PESTANA_STOCK);
+  if (stock) {
+    libro.setActiveSheet(stock);
+    libro.moveActiveSheet(1);
+  }
   var panel = libro.getSheetByName(PESTANA_PANEL);
   if (panel) {
     libro.setActiveSheet(panel);
