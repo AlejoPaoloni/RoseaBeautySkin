@@ -6,7 +6,8 @@ import { config, siteUrl } from "@/lib/config";
 // tienda: habilita el panel de marca y da contexto a los Product de cada
 // ficha. No se declara una direccion postal porque no hay local a la calle —
 // inventar una es justo lo que Google penaliza; lo honesto es decir desde
-// donde se vende (Rosario) y hasta donde se envia (todo el pais).
+// donde se vende (Rosario) y hasta donde se envia hoy (Gran Rosario —
+// todavia no hay envios a todo el pais, eso viene despues).
 export default function OrganizationJsonLd() {
   const tienda = {
     "@context": "https://schema.org",
@@ -21,7 +22,7 @@ export default function OrganizationJsonLd() {
     email: config.email,
     sameAs: [config.instagram],
     currenciesAccepted: "ARS",
-    areaServed: { "@type": "Country", name: "Argentina" },
+    areaServed: "Gran Rosario, Santa Fe",
     address: {
       "@type": "PostalAddress",
       addressLocality: "Rosario",
