@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   // La description es lo que se lee abajo del titulo en Google: conviene que
   // diga que se vende, de que marcas y donde, no solo el lema.
   description:
-    "Maquillaje y skincare importado de rhode, Rare Beauty, e.l.f., Fenty Beauty y más. Envíos en Rosario y Gran Rosario. Consultá por Instagram.",
+    "Maquillaje y skincare importado de rhode, Rare Beauty, e.l.f., Fenty Beauty y más. Envíos en Rosario y alrededores (consultar zona de envíos). Consultá por Instagram.",
   keywords: [
     "maquillaje importado",
     "skincare importado",

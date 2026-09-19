@@ -22,7 +22,7 @@ export default function OrganizationJsonLd() {
     email: config.email,
     sameAs: [config.instagram],
     currenciesAccepted: "ARS",
-    areaServed: "Gran Rosario, Santa Fe",
+    areaServed: "Rosario y alrededores (consultar zona de envíos)",
     address: {
       "@type": "PostalAddress",
       addressLocality: "Rosario",
