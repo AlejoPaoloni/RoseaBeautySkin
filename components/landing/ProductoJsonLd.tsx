@@ -33,18 +33,24 @@ export default function ProductoJsonLd({ producto }: { producto: Producto }) {
     ...(producto.tonos && producto.tonos.length > 0
       ? { color: producto.tonos.map((t) => t.nombre).join(", ") }
       : {}),
-    offers: {
-      "@type": "Offer",
-      url,
-      priceCurrency: "ARS",
-      // Sin price en los por encargo: se cotizan por consulta, y el JSON-LD
-      // queda en el HTML — publicarlo aca filtraria el precio que la ficha
-      // justamente no muestra.
-      ...(tienePrecioPublico(producto) ? { price: producto.precio } : {}),
-      availability: DISPONIBILIDAD[producto.estado],
-      itemCondition: "https://schema.org/NewCondition",
-      seller: { "@type": "Organization", name: config.marca },
-    },
+    // Sin offers en los por encargo: se cotizan por consulta y el precio no
+    // se muestra en ningun lado publico. Google exige price en todo Offer
+    // que declares — uno sin price no es "mas discreto", es invalido, y asi
+    // lo marcaba Search Console en Fragmentos de producto. Omitir offers
+    // entero deja el Product igual de valido, solo sin la parte de precio.
+    ...(tienePrecioPublico(producto)
+      ? {
+          offers: {
+            "@type": "Offer",
+            url,
+            priceCurrency: "ARS",
+            price: producto.precio,
+            availability: DISPONIBILIDAD[producto.estado],
+            itemCondition: "https://schema.org/NewCondition",
+            seller: { "@type": "Organization", name: config.marca },
+          },
+        }
+      : {}),
   };
 
   const breadcrumb = {

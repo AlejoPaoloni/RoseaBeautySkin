@@ -31,15 +31,19 @@ export default function ProductosJsonLd({
         image: p.imagen_url,
         url: `${siteUrl()}${rutaProducto(p)}`,
         ...(p.marca ? { brand: { "@type": "Brand", name: p.marca } } : {}),
-        offers: {
-          "@type": "Offer",
-          priceCurrency: "ARS",
-          // Sin price en los por encargo: el JSON-LD queda en el HTML y lo
-          // indexa Google, asi que publicar aca el precio que la card
-          // esconde seria filtrarlo igual.
-          ...(tienePrecioPublico(p) ? { price: p.precio } : {}),
-          availability: DISPONIBILIDAD[p.estado],
-        },
+        // Sin offers en los por encargo: Offer sin price es invalido para
+        // Google (lo marcaba Fragmentos de producto en Search Console), y
+        // el precio de esos productos no se muestra en ningun lado publico.
+        ...(tienePrecioPublico(p)
+          ? {
+              offers: {
+                "@type": "Offer",
+                priceCurrency: "ARS",
+                price: p.precio,
+                availability: DISPONIBILIDAD[p.estado],
+              },
+            }
+          : {}),
       },
     })),
   };

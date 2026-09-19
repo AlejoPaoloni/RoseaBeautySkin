@@ -35,6 +35,18 @@ export default function OrganizationJsonLd() {
       availableLanguage: "Spanish",
       areaServed: "AR",
     },
+    // Declarada una sola vez a nivel tienda: Google la aplica a los 38
+    // productos sin repetirla en cada Offer. 7 dias, la clienta cubre el
+    // envio de vuelta — es la politica real, no un valor de relleno para
+    // pasar la validacion de Search Console.
+    hasMerchantReturnPolicy: {
+      "@type": "MerchantReturnPolicy",
+      applicableCountry: "AR",
+      returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+      merchantReturnDays: 7,
+      returnMethod: "https://schema.org/ReturnByMail",
+      returnFees: "https://schema.org/ReturnFeesCustomerResponsibility",
+    },
   };
 
   const sitio = {
