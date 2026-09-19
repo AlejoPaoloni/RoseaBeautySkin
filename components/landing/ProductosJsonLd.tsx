@@ -1,6 +1,7 @@
 import type { Producto } from "@/lib/types";
 import { tienePrecioPublico } from "@/lib/catalog";
 import { siteUrl } from "@/lib/config";
+import { rutaProducto } from "@/lib/slug";
 
 const DISPONIBILIDAD: Record<Producto["estado"], string> = {
   Disponible: "https://schema.org/InStock",
@@ -28,7 +29,7 @@ export default function ProductosJsonLd({
         name: p.nombre,
         description: p.descripcion_corta,
         image: p.imagen_url,
-        url: `${siteUrl()}/producto/${p.id}`,
+        url: `${siteUrl()}${rutaProducto(p)}`,
         ...(p.marca ? { brand: { "@type": "Brand", name: p.marca } } : {}),
         offers: {
           "@type": "Offer",

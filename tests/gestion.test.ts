@@ -42,6 +42,7 @@ function producto(over: Partial<Producto> = {}): Producto {
   n += 1;
   return {
     id: `p-${n}`,
+    slug: `producto-${n}`,
     nombre: `Producto ${n}`,
     marca: null,
     descripcion_corta: null,

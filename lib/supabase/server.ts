@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { ordenarProductos } from "@/lib/catalog";
+import { esUuid } from "@/lib/slug";
 import type { Producto } from "@/lib/types";
 
 export interface ResultadoProductos {
@@ -29,8 +30,12 @@ export async function obtenerProductos(): Promise<ResultadoProductos> {
 // Lectura publica de un solo producto, para la pagina de detalle.
 // null = no existe o Supabase no esta configurado/fallo (la pagina lo trata
 // como 404 en ambos casos: no hay nada mas que mostrarle a la visita).
-export async function obtenerProductoPorId(
-  id: string
+//
+// `valor` puede ser el slug (URL nueva) o el uuid (URL vieja, ya compartida
+// por WhatsApp): la pagina resuelve por cualquiera de los dos y redirige la
+// vieja a la nueva.
+export async function obtenerProducto(
+  valor: string
 ): Promise<Producto | null> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -40,7 +45,7 @@ export async function obtenerProductoPorId(
     const { data, error } = await supabase
       .from("productos")
       .select("*")
-      .eq("id", id)
+      .eq(esUuid(valor) ? "id" : "slug", valor)
       .single();
     if (error || !data) return null;
     return data as Producto;

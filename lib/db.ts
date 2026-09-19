@@ -1,8 +1,13 @@
 import { createClient } from "@/lib/supabase/client";
 import { ordenarProductos } from "@/lib/catalog";
+import { slugProducto } from "@/lib/slug";
 import type { Producto } from "@/lib/types";
 
 type ProductoNuevo = Omit<Producto, "id" | "created_at">;
+
+// El form no arma el slug: lo calcula crearProducto contra los que ya
+// existen, asi dos productos no pueden terminar con la misma URL.
+type ProductoDelForm = Omit<ProductoNuevo, "slug">;
 
 export async function listarProductos(): Promise<Producto[]> {
   const { data, error } = await createClient().from("productos").select("*");
@@ -10,11 +15,21 @@ export async function listarProductos(): Promise<Producto[]> {
   return ordenarProductos((data ?? []) as Producto[]);
 }
 
-export async function crearProducto(p: ProductoNuevo): Promise<void> {
-  const { error } = await createClient().from("productos").insert(p);
+export async function crearProducto(p: ProductoDelForm): Promise<void> {
+  const supabase = createClient();
+  const { data } = await supabase.from("productos").select("slug");
+  const tomados = (data ?? [])
+    .map((f) => (f as { slug: string | null }).slug)
+    .filter((s): s is string => !!s);
+  const { error } = await supabase
+    .from("productos")
+    .insert({ ...p, slug: slugProducto(p, tomados) });
   if (error) throw error;
 }
 
+// Sin slug aca a proposito: una vez publicado, cambiarle la URL a un producto
+// rompe los links ya compartidos y tira a la basura lo que Google ya indexo.
+// El slug se decide al crearlo y no se toca.
 export async function actualizarProducto(
   id: string,
   p: Partial<ProductoNuevo>

@@ -1,4 +1,5 @@
 import { formatearPrecio, tienePrecioPublico } from "@/lib/catalog";
+import { rutaProducto } from "@/lib/slug";
 import type { Producto } from "@/lib/types";
 
 // Link directo al detalle del producto. Se arma con el id y no con la URL
@@ -6,7 +7,7 @@ import type { Producto } from "@/lib/types";
 // ?_vercel_share) ni dependa de desde donde se comparta.
 export function urlProducto(producto: Producto): string {
   const origen = typeof window !== "undefined" ? window.location.origin : "";
-  return `${origen}/producto/${producto.id}`;
+  return `${origen}${rutaProducto(producto)}`;
 }
 
 // Comparte el producto como LINK, no como foto adjunta: WhatsApp e Instagram

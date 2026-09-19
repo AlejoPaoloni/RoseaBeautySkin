@@ -10,6 +10,7 @@ import {
   tienePrecioPublico,
 } from "@/lib/catalog";
 import { marcarVueltaAlCatalogo } from "@/lib/catalogoEstado";
+import { rutaProducto } from "@/lib/slug";
 import type { Producto } from "@/lib/types";
 import ColorSwatches from "@/components/common/ColorSwatches";
 
@@ -37,7 +38,7 @@ export default function ProductCard({
     // que arma la seccion — el item de layout sigue siendo el article de
     // adentro, igual que antes de que la card llevara a un detalle.
     <Link
-      href={`/producto/${producto.id}`}
+      href={rutaProducto(producto)}
       className="contents"
       aria-label={`Ver detalle de ${producto.nombre}`}
       // Deja anotado donde estaba el catalogo para que "Volver al catalogo"

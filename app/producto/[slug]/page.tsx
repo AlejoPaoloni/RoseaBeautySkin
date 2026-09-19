@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import {
   esProductoNuevo,
   formatearPrecio,
@@ -9,10 +9,12 @@ import {
   tienePrecioPublico,
 } from "@/lib/catalog";
 import { config, instagramDmUrl } from "@/lib/config";
-import { obtenerProductoPorId } from "@/lib/supabase/server";
+import { esUuid, rutaProducto } from "@/lib/slug";
+import { obtenerProducto } from "@/lib/supabase/server";
 import ColorSwatches from "@/components/common/ColorSwatches";
 import Footer from "@/components/landing/Footer";
 import ProductGallery from "@/components/landing/ProductGallery";
+import ProductoJsonLd from "@/components/landing/ProductoJsonLd";
 import ShareProductButton from "@/components/landing/ShareProductButton";
 import VolverAlCatalogo from "@/components/landing/VolverAlCatalogo";
 
@@ -24,31 +26,53 @@ const BADGE: Record<string, string> = {
   "Sin stock": "bg-red-100 text-red-600",
 };
 
-type Props = { params: Promise<{ id: string }> };
+type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id } = await params;
-  const producto = await obtenerProductoPorId(id);
+  const { slug } = await params;
+  const producto = await obtenerProducto(slug);
   if (!producto) return {};
   const descripcion = producto.descripcion_corta ?? producto.descripcion_larga ?? config.tagline;
+  // El titulo lleva la marca del producto adelante: es como se busca
+  // ("rhode pocket blush"), y en el resultado de Google se lee antes de que
+  // lo corte el ancho.
+  const titulo = producto.marca
+    ? `${producto.marca} ${producto.nombre}`
+    : producto.nombre;
   return {
-    title: `${producto.nombre} | ${config.marca}`,
+    title: titulo,
     description: descripcion,
-    alternates: { canonical: `/producto/${producto.id}` },
+    keywords: [
+      producto.nombre,
+      ...(producto.marca ? [producto.marca] : []),
+      ...(producto.tonos ?? []).map((t) => t.nombre),
+      producto.categoria,
+      producto.subcategoria,
+      "importado",
+      "Argentina",
+    ],
+    alternates: { canonical: rutaProducto(producto) },
     // Sin images aca: la vista previa la arma opengraph-image.tsx, que
     // devuelve PNG (las fotos del bucket son .webp y WhatsApp no las lee).
     openGraph: {
-      title: producto.nombre,
+      title: titulo,
       description: descripcion,
       type: "website",
+      url: rutaProducto(producto),
+      siteName: config.marca,
+      locale: "es_AR",
     },
   };
 }
 
 export default async function ProductoDetallePage({ params }: Props) {
-  const { id } = await params;
-  const producto = await obtenerProductoPorId(id);
+  const { slug } = await params;
+  const producto = await obtenerProducto(slug);
   if (!producto) notFound();
+
+  // Link viejo (/producto/<uuid>, ya compartido por WhatsApp) -> 308 a la URL
+  // con slug, para no quedar con dos URLs indexadas del mismo producto.
+  if (esUuid(slug) && producto.slug) permanentRedirect(rutaProducto(producto));
 
   const imagenes = imagenesProducto(producto);
   const descripcion = producto.descripcion_larga || producto.descripcion_corta;
@@ -57,6 +81,7 @@ export default async function ProductoDetallePage({ params }: Props) {
     // pb-24 en el celular: la barra fija de abajo no puede comerse el final
     // del footer cuando se llega abajo de todo.
     <main className="pb-24 md:pb-0">
+      <ProductoJsonLd producto={producto} />
       <header className="border-b border-rosea-100 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link href="/" aria-label="Inicio" className="-m-2 p-2">

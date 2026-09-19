@@ -208,15 +208,22 @@ export default function Hero() {
           style={{ opacity: opacidadTexto, y: yTexto }}
           className="absolute inset-x-0 top-[11svh] z-40 flex flex-col items-center px-6 text-center md:top-[12svh]"
         >
+          {/* El h1 es la caligrafia, pero un h1 que para Google solo dice
+              "Rosea Beauty" desperdicia la senal mas fuerte de la pagina: el
+              texto real va en sr-only (lo lee Google y el lector de pantalla,
+              no se ve) y la imagen queda decorativa con alt vacio. */}
           <h1>
             <Image
               src="/brand/caligrafia.svg"
-              alt={config.marca}
+              alt=""
               width={640}
               height={205}
               priority
               className="w-[min(74vw,460px)]"
             />
+            <span className="sr-only">
+              {config.marca} — maquillaje y skincare importado en Rosario
+            </span>
           </h1>
           <p className="mt-5 font-serif text-lg tracking-wide text-rosea-700 md:text-2xl">
             {config.tagline}

@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import sharp from "sharp";
 import { config, siteUrl } from "@/lib/config";
-import { obtenerProductoPorId } from "@/lib/supabase/server";
+import { obtenerProducto } from "@/lib/supabase/server";
 
 // Se rearma como mucho una vez por hora: convertir la foto cuesta, y
 // WhatsApp igual cachea la previa por su cuenta bastante mas que eso.
@@ -70,10 +70,10 @@ async function fotoDelProducto(url: string): Promise<Buffer | null> {
 export default async function OgProducto({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }) {
-  const { id } = await params;
-  const producto = await obtenerProductoPorId(id);
+  const { slug } = await params;
+  const producto = await obtenerProducto(slug);
   // satori/sharp necesitan una URL absoluta; si la foto quedo guardada como
   // ruta relativa se resuelve contra el sitio en vez de reventar la previa.
   const origen = producto?.imagen_url

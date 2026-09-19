@@ -8,6 +8,9 @@ export interface Tono {
 
 export interface Producto {
   id: string;
+  // Parte legible de la URL (/producto/<slug>). Se genera con slugProducto()
+  // al crear el producto; las URLs viejas con uuid redirigen a esta.
+  slug: string | null;
   nombre: string;
   marca: string | null;
   descripcion_corta: string | null;
