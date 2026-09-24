@@ -1,4 +1,5 @@
 import { config, siteUrl } from "@/lib/config";
+import { jsonLd } from "@/lib/jsonld";
 
 // Schema.org del negocio y del sitio.
 //
@@ -64,11 +65,11 @@ export default function OrganizationJsonLd() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(tienda) }}
+        dangerouslySetInnerHTML={{ __html: jsonLd(tienda) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(sitio) }}
+        dangerouslySetInnerHTML={{ __html: jsonLd(sitio) }}
       />
     </>
   );

@@ -1,6 +1,7 @@
 import type { Producto } from "@/lib/types";
 import { tienePrecioPublico } from "@/lib/catalog";
 import { siteUrl } from "@/lib/config";
+import { jsonLd } from "@/lib/jsonld";
 import { rutaProducto } from "@/lib/slug";
 
 const DISPONIBILIDAD: Record<Producto["estado"], string> = {
@@ -51,7 +52,7 @@ export default function ProductosJsonLd({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: jsonLd(data) }}
     />
   );
 }

@@ -6,7 +6,12 @@ export async function proxy(request: NextRequest) {
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anon) return response;
+  // Sin credenciales de Supabase no hay forma de saber quien es el usuario:
+  // el panel se cierra en vez de quedar abierto. (Las paginas publicas no pasan
+  // por aca, el matcher solo toma /admin.)
+  if (!url || !anon) {
+    return new NextResponse("Servicio no disponible", { status: 503 });
+  }
 
   const supabase = createServerClient(url, anon, {
     cookies: {

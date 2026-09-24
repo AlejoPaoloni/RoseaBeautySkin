@@ -1,5 +1,6 @@
 import { imagenesProducto, tienePrecioPublico } from "@/lib/catalog";
 import { config, siteUrl } from "@/lib/config";
+import { jsonLd } from "@/lib/jsonld";
 import { rutaProducto } from "@/lib/slug";
 import type { Producto } from "@/lib/types";
 
@@ -72,11 +73,11 @@ export default function ProductoJsonLd({ producto }: { producto: Producto }) {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(product) }}
+        dangerouslySetInnerHTML={{ __html: jsonLd(product) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }}
+        dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumb) }}
       />
     </>
   );

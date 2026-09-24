@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
-import sharp from "sharp";
+import sharp, { type Sharp } from "sharp";
 import { config, siteUrl } from "@/lib/config";
+import { imagenPermitida } from "@/lib/imagenes";
 import { obtenerProducto } from "@/lib/supabase/server";
 
 // Se rearma como mucho una vez por hora: convertir la foto cuesta, y
@@ -19,7 +20,7 @@ export const alt = config.marca;
 // formato de tarjeta grande de WhatsApp. El relleno de los costados sale
 // del color de la esquina de la propia foto, asi el lienzo se funde con
 // ella en vez de dibujarle un marco alrededor.
-async function colorDeFondo(imagen: sharp.Sharp) {
+async function colorDeFondo(imagen: Sharp) {
   try {
     const { data } = await imagen
       .clone()
@@ -50,7 +51,16 @@ async function colorDeFondo(imagen: sharp.Sharp) {
 
 async function fotoDelProducto(url: string): Promise<Buffer | null> {
   try {
-    const res = await fetch(url);
+    // La URL sale de la base de datos: solo se pide si es del bucket propio,
+    // de e.l.f. o del sitio — sin esto, quien pudiera escribir una imagen_url
+    // haria que el servidor le pida cualquier direccion. Y sin seguir
+    // redirecciones, que serian otra forma de saltarse la lista.
+    if (
+      !imagenPermitida(url, process.env.NEXT_PUBLIC_SUPABASE_URL, siteUrl())
+    ) {
+      return null;
+    }
+    const res = await fetch(url, { redirect: "error" });
     if (!res.ok) return null;
     const original = sharp(Buffer.from(await res.arrayBuffer()));
     const fondo = await colorDeFondo(original);
