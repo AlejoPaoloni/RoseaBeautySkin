@@ -45,6 +45,9 @@ const IconoTareas = trazo(
 const IconoCalculadora = trazo(
   "M5.5 3.5h9v13h-9v-13ZM7.5 6.5h5M7.5 10h.01M10 10h.01M12.5 10h.01M7.5 13h.01M10 13h.01M12.5 13h.01"
 );
+const IconoSeguridad = trazo(
+  "M10 3.5 4.5 5.5v4.2c0 3.2 2.2 5.6 5.5 6.8 3.3-1.2 5.5-3.6 5.5-6.8V5.5L10 3.5ZM7.8 10l1.6 1.6 3-3.2"
+);
 const IconoMas = trazo("M10 5.5v9M5.5 10h9");
 const IconoLanding = trazo(
   "M11.5 4.5h4v4M15.5 4.5 9 11M13.5 11.5v4h-9v-9h4"
@@ -67,6 +70,7 @@ const SECCIONES: Seccion[] = [
   { href: "/admin/pedidos", etiqueta: "Pedidos", icono: IconoPedidos },
   { href: "/admin/clientas", etiqueta: "Clientas", icono: IconoClientas },
   { href: "/admin/tareas", etiqueta: "Tareas", icono: IconoTareas },
+  { href: "/admin/seguridad", etiqueta: "Seguridad", icono: IconoSeguridad },
 ];
 
 // En el celular no entran seis destinos abajo sin que queden inclickeables.

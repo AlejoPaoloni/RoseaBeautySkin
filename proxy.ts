@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { faltaSegundoFactor } from "@/lib/mfa";
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -42,7 +43,22 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (user && path === "/admin/login") {
+  // Contrasena puesta pero falta el codigo del segundo factor: al login, que
+  // retoma directo en el paso del codigo. Esto es solo la pantalla: quien de
+  // verdad corta el acceso a los datos es la base (es_admin() exige aal2 si
+  // hay un factor verificado), asi que si esta consulta fallara no se abre nada.
+  const garantia = user
+    ? (await supabase.auth.mfa.getAuthenticatorAssuranceLevel()).data
+    : null;
+  const pendiente = faltaSegundoFactor(garantia);
+
+  if (user && pendiente && path !== "/admin/login") {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/admin/login";
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (user && !pendiente && path === "/admin/login") {
     const adminUrl = request.nextUrl.clone();
     adminUrl.pathname = "/admin";
     return NextResponse.redirect(adminUrl);
