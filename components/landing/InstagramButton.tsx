@@ -1,22 +1,22 @@
 "use client";
 
-import { config, instagramDmUrl } from "@/lib/config";
-import { intentarAbrirEnApp } from "@/lib/instagram";
+import { config } from "@/lib/config";
+import { useDestinoInstagram } from "./useDestinoInstagram";
 
 export default function InstagramButton() {
+  const { destino, alTocar } = useDestinoInstagram();
+
   return (
     <a
-      href={instagramDmUrl()}
+      href={destino}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Escribir por Instagram"
-      onClick={(e) => {
+      onClick={() => {
         // Instagram no soporta precargar texto en el DM via URL (a diferencia
         // de wa.me). Copiamos el mensaje para que quede listo para pegar.
         navigator.clipboard?.writeText(config.mensajeConsulta).catch(() => {});
-        // Dentro del navegador de Instagram, el href web se quedaria ahi
-        // adentro: se intenta saltar a la app (ver lib/instagram.ts).
-        if (intentarAbrirEnApp()) e.preventDefault();
+        alTocar();
       }}
       className="fixed bottom-5 right-5 z-50 flex h-13 w-13 items-center justify-center rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 text-white shadow-lg transition-transform duration-200 hover:scale-110 md:bottom-8 md:right-8 md:h-14 md:w-14"
     >

@@ -1,73 +1,54 @@
 import { config, instagramDmUrl } from "./config";
 
-// Abrir el DM desde adentro del navegador de Instagram.
+// A donde apunta el boton de consulta segun desde donde se este mirando.
 //
-// Cuando alguien entra por el link de la bio, Instagram no abre el navegador
-// del telefono: abre su propio webview. Ahi adentro, un link a ig.me no lleva
-// a ningun lado util — ig.me es solo un redirect a instagram.com/m/usuario, o
-// sea otra pagina web, que se carga dentro del mismo webview lento en vez de
-// saltar a la app.
+// El problema: quien entra por el link de la bio no navega con el navegador
+// del telefono, sino con el webview que Instagram abre adentro de la app. Ahi
+// un link a ig.me no salta a la app — ig.me es un redirect a
+// instagram.com/m/usuario y en un navegador comun el sistema operativo lo
+// intercepta (Universal Links en iOS, App Links en Android) y abre la app.
+// Dentro del webview de la propia Instagram ese mecanismo no se dispara.
 //
-// La unica forma de pedirle al sistema que abra la app es un enlace de
-// esquema (instagram://). No esta documentado por Meta y su comportamiento
-// dentro del propio webview cambia segun version y sistema operativo, asi que
-// esto es un intento, no una garantia: si no funciona, a los 800ms se sigue al
-// link web de siempre. En el peor caso queda como antes, nunca peor.
+// Lo unico que queda es un enlace de esquema, y ojo con COMO se dispara:
+// hacerlo por JavaScript (location.href = "instagram://...") no funciona, ya
+// se probo. Lo que puede funcionar es que el esquema este en el href del <a>
+// y lo toque la persona: para el webview es una navegacion iniciada por el
+// usuario, no un salto automatico.
+//
+// En Android hay ademas intent://, que es el mecanismo propio de Chrome para
+// abrir una app concreta y permite declarar a donde caer si no esta instalada.
 
-// Abre el perfil en la app. No hay un esquema publico que abra el chat
-// directo con alguien, asi que desde el perfil queda un toque mas ("Mensaje").
-export const URL_APP_PERFIL = `instagram://user?username=${config.instagramUsuario}`;
+const USUARIO = config.instagramUsuario;
 
-const MS_ESPERA_APP = 800;
+// Abre el perfil en la app. No existe un esquema publico que abra el chat con
+// alguien: instagram://direct-inbox abre la bandeja (sin la conversacion) y
+// las URLs de conversacion necesitan un id de hilo que no tenemos. Desde el
+// perfil queda un toque mas ("Mensaje"), pero ya dentro de la app.
+export const ESQUEMA_IOS = `instagram://user?username=${USUARIO}`;
+
+// Mismo destino, en el formato que entiende Chrome en Android. Si Instagram no
+// estuviera instalada, browser_fallback_url evita el callejon sin salida.
+export const ESQUEMA_ANDROID =
+  `intent://user?username=${USUARIO}#Intent;scheme=instagram;` +
+  `package=com.instagram.android;S.browser_fallback_url=${encodeURIComponent(instagramDmUrl())};end`;
 
 /**
- * True si la pagina esta corriendo dentro del navegador embebido de Instagram.
- * Su user agent termina con "Instagram <version> ..." tanto en iOS como en
- * Android. En cualquier navegador normal esto da false y no se cambia nada.
+ * True si la pagina corre dentro del navegador embebido de Instagram. Su user
+ * agent termina con "Instagram <version> ..." en iOS y en Android.
  */
 export function enNavegadorDeInstagram(ua: string | undefined): boolean {
   return !!ua && /\bInstagram[\s/]\d/i.test(ua);
 }
 
-type Ventana = {
-  location: { href: string };
-  setTimeout: (fn: () => void, ms: number) => number;
-  clearTimeout: (id: number) => void;
-  document: {
-    hidden: boolean;
-    addEventListener: (t: string, fn: () => void, o?: object) => void;
-    removeEventListener: (t: string, fn: () => void) => void;
-  };
-};
+export function esAndroid(ua: string | undefined): boolean {
+  return !!ua && /Android/i.test(ua);
+}
 
 /**
- * Intenta saltar a la app y, si no pasa nada, cae al link web.
- *
- * Como saber si funciono: si el sistema abre Instagram, esta pagina pasa a
- * segundo plano y el navegador la marca oculta. Si a los 800ms seguimos
- * visibles, el esquema no hizo nada y se navega al link de siempre.
- *
- * Devuelve true si tomo el control (quien llama tiene que cancelar el click),
- * false si conviene dejar que el <a href> haga lo suyo.
+ * A donde tiene que apuntar el boton. En cualquier navegador normal devuelve
+ * el link web de siempre: el sistema ya sabe abrir la app desde ahi.
  */
-export function intentarAbrirEnApp(
-  v: Ventana = window as unknown as Ventana,
-  ua: string | undefined = typeof navigator === "undefined" ? undefined : navigator.userAgent
-): boolean {
-  if (!enNavegadorDeInstagram(ua)) return false;
-
-  const irAlWeb = () => {
-    v.document.removeEventListener("visibilitychange", alOcultarse);
-    v.location.href = instagramDmUrl();
-  };
-  const id = v.setTimeout(irAlWeb, MS_ESPERA_APP);
-  function alOcultarse() {
-    // La app se abrio: cancelar el respaldo para no navegar por atras y
-    // dejar la pestana en el DM web cuando la persona vuelva.
-    if (v.document.hidden) v.clearTimeout(id);
-  }
-  v.document.addEventListener("visibilitychange", alOcultarse);
-
-  v.location.href = URL_APP_PERFIL;
-  return true;
+export function destinoDeConsulta(ua: string | undefined): string {
+  if (!enNavegadorDeInstagram(ua)) return instagramDmUrl();
+  return esAndroid(ua) ? ESQUEMA_ANDROID : ESQUEMA_IOS;
 }

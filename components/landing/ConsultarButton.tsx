@@ -1,22 +1,21 @@
 "use client";
 
-import { instagramDmUrl } from "@/lib/config";
-import { intentarAbrirEnApp } from "@/lib/instagram";
+import { useDestinoInstagram } from "./useDestinoInstagram";
 
-// El boton "Consultar" de la ficha. Es un componente cliente solo por el
-// onClick: quien entra desde el link de la bio esta dentro del navegador de
-// Instagram, y ahi el href web se queda adentro del webview en vez de abrir
-// la app (ver lib/instagram.ts).
+// El boton "Consultar" de la ficha. Es un componente cliente porque el destino
+// depende de desde donde se mire: dentro del navegador de Instagram apunta al
+// esquema de la app, en cualquier otro lado al link web (ver
+// useDestinoInstagram).
 export default function ConsultarButton({ nombre }: { nombre: string }) {
+  const { destino, alTocar } = useDestinoInstagram();
+
   return (
     <a
-      href={instagramDmUrl()}
+      href={destino}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={alTocar}
       aria-label={`Consultar por Instagram: ${nombre}`}
-      onClick={(e) => {
-        if (intentarAbrirEnApp()) e.preventDefault();
-      }}
       className="flex flex-1 items-center justify-center gap-2 rounded-full bg-rosea-500 py-3 text-sm font-medium text-white transition-colors hover:bg-rosea-600 md:max-w-xs"
     >
       <svg viewBox="0 0 24 24" fill="currentColor" className="h-4 w-4">
