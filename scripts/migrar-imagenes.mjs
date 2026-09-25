@@ -37,17 +37,57 @@ function leerEnv(clave) {
   return m[1].trim();
 }
 
-async function iniciarSesion(url, anon, email, password) {
-  const r = await fetch(`${url}/auth/v1/token?grant_type=password`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", apikey: anon },
-    body: JSON.stringify({ email, password }),
-  });
-  const data = await r.json();
-  if (!r.ok) {
-    throw new Error(`No se pudo iniciar sesión: ${data.error_description || data.msg || r.status}`);
+// Devuelve un token que sirve para escribir. Si la cuenta tiene verificacion
+// en dos pasos, la contrasena sola da una sesion "aal1" y las politicas de la
+// base (ver migracion 010) rechazan toda escritura: hay que subirla a "aal2"
+// con el codigo de la app, igual que hace el panel al entrar.
+async function iniciarSesion(url, anon, email, password, rl) {
+  const pedir = async (ruta, cuerpo, token) => {
+    const r = await fetch(`${url}/auth/v1/${ruta}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: anon,
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(cuerpo),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      throw new Error(data.error_description || data.msg || data.error || `HTTP ${r.status}`);
+    }
+    return data;
+  };
+
+  let sesion;
+  try {
+    sesion = await pedir("token?grant_type=password", { email, password });
+  } catch (e) {
+    throw new Error(`No se pudo iniciar sesión: ${e.message}`);
   }
-  return data.access_token;
+
+  const factor = (sesion.user?.factors || []).find(
+    (f) => f.status === "verified" && f.factor_type === "totp"
+  );
+  if (!factor) return sesion.access_token;
+
+  console.log("\nLa cuenta tiene verificación en dos pasos.");
+  const codigo = (await rl.question("Código de 6 dígitos de tu app: ")).replace(/\D/g, "");
+  if (codigo.length !== 6) throw new Error("El código tiene que ser de 6 dígitos.");
+
+  try {
+    const desafio = await pedir(`factors/${factor.id}/challenge`, {}, sesion.access_token);
+    const verificado = await pedir(
+      `factors/${factor.id}/verify`,
+      { challenge_id: desafio.id, code: codigo },
+      sesion.access_token
+    );
+    return verificado.access_token;
+  } catch (e) {
+    throw new Error(
+      `No se pudo verificar el código (${e.message}). Ojo que vence cada 30 segundos: probá con el que muestre la app en este momento.`
+    );
+  }
 }
 
 async function descargarYComprimir(imagenUrl) {
@@ -98,10 +138,17 @@ async function main() {
   console.log("Migración de fotos: sephora.com → tu bucket de Supabase\n");
   const email = (await rl.question("Email de admin: ")).trim();
   const password = (await rl.question("Contraseña: ")).trim();
-  rl.close();
 
   console.log("\nIniciando sesión...");
-  const token = await iniciarSesion(url, anon, email, password);
+  // finally y no una linea suelta: si el login falla (codigo vencido, por
+  // ejemplo) la consola tiene que cerrarse igual, o Node revienta al salir con
+  // un "Assertion failed" de libuv que tapa el mensaje de error real.
+  let token;
+  try {
+    token = await iniciarSesion(url, anon, email, password, rl);
+  } finally {
+    rl.close();
+  }
 
   console.log("Buscando productos con foto externa...");
   const r = await fetch(`${url}/rest/v1/productos?select=id,nombre,imagen_url`, {
@@ -146,5 +193,8 @@ async function main() {
 
 main().catch((e) => {
   console.error("\nError:", e.message);
-  process.exit(1);
+  // exitCode y no process.exit(): salir de golpe mientras la consola todavia
+  // tiene handles abiertos hace que Node aborte con un "Assertion failed" de
+  // libuv que se imprime despues del error y lo tapa.
+  process.exitCode = 1;
 });
