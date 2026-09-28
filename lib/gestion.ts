@@ -98,6 +98,90 @@ export function productosStockBajo(productos: Producto[]): Producto[] {
     .sort((a, b) => (a.stock ?? 0) - (b.stock ?? 0));
 }
 
+// --- Reposicion (lo que hay que volver a pedirle al proveedor) ---
+
+// Ventana para medir cuanto se vende de cada producto al sugerir cantidades.
+export const DIAS_REPOSICION = 90;
+
+export interface FilaReposicion {
+  producto: Producto;
+  motivo: "Sin stock" | "Stock bajo";
+  // Unidades vendidas en los ultimos DIAS_REPOSICION dias.
+  vendidas: number;
+  sugerido: number;
+}
+
+// Fechas "YYYY-MM-DD" (columnas date): se resta en UTC para que el horario
+// de Argentina no corra el dia.
+function restarDias(fecha: string, dias: number): string {
+  const d = new Date(`${fecha}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - dias);
+  return d.toISOString().slice(0, 10);
+}
+
+export function paraReponer(
+  productos: Producto[],
+  ventas: Venta[],
+  hoy: string
+): FilaReposicion[] {
+  const desde = restarDias(hoy, DIAS_REPOSICION);
+  const vendidasPorId = new Map<string, number>();
+  for (const venta of ventas) {
+    if (venta.fecha < desde) continue;
+    for (const item of venta.items) {
+      if (!item.producto_id) continue;
+      vendidasPorId.set(
+        item.producto_id,
+        (vendidasPorId.get(item.producto_id) ?? 0) + item.cantidad
+      );
+    }
+  }
+
+  const filas: FilaReposicion[] = [];
+  for (const p of productos) {
+    // Por Encargo no se repone: se pide cuando lo encargan.
+    const motivo =
+      p.estado === "Sin stock"
+        ? "Sin stock"
+        : p.estado === "Disponible" && stockBajo(p)
+          ? "Stock bajo"
+          : null;
+    if (!motivo) continue;
+    const quedan = p.stock ?? 0;
+    const vendidas = vendidasPorId.get(p.id) ?? 0;
+    // Lo que se vendio en la ventana menos lo que queda, y como minimo lo
+    // necesario para quedar por encima del aviso de stock bajo.
+    const sugerido = Math.max(vendidas - quedan, p.stock_minimo + 1 - quedan, 1);
+    filas.push({ producto: p, motivo, vendidas, sugerido });
+  }
+
+  return filas.sort(
+    (a, b) =>
+      Number(b.motivo === "Sin stock") - Number(a.motivo === "Sin stock") ||
+      b.vendidas - a.vendidas ||
+      a.producto.nombre.localeCompare(b.producto.nombre)
+  );
+}
+
+// Nombre completo para pedirle al proveedor. Cada tono es un producto
+// aparte con un solo tono cargado: sin el, tres "Hydrating Camo Concealer"
+// en la lista no se distinguen.
+export function nombreParaPedir(producto: Producto): string {
+  const tono = producto.tonos?.length === 1 ? producto.tonos[0].nombre : null;
+  return [producto.marca, producto.nombre].filter(Boolean).join(" ") +
+    (tono ? ` (${tono})` : "");
+}
+
+// Texto listo para pegar en el WhatsApp del proveedor.
+export function textoReposicion(
+  filas: { producto: Producto; cantidad: number }[]
+): string {
+  const lineas = filas
+    .filter((f) => f.cantidad > 0)
+    .map((f) => `- ${f.cantidad} × ${nombreParaPedir(f.producto)}`);
+  return ["Reposición Rosea Beauty", "", ...lineas].join("\n");
+}
+
 // --- Pedidos ---
 
 export function totalPedido(pedido: Pedido): number {

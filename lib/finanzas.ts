@@ -156,14 +156,21 @@ export interface FilaProducto {
   ganancia: number;
 }
 
+export type CriterioRanking = "ingresos" | "unidades" | "ganancia";
+
 // Agrupa por nombre y no por producto_id: si el producto se borro del
 // catalogo el id queda en null, pero el nombre snapshot sigue estando.
+// `mes` puede ser un mes, varios (ej: los ultimos 12) o null para todo.
 export function topProductos(
   ventas: Venta[],
-  mes: string | null = null,
-  limite = 5
+  mes: string | string[] | null = null,
+  limite = 5,
+  criterio: CriterioRanking = "ingresos"
 ): FilaProducto[] {
-  const filtradas = mes ? ventas.filter((v) => mesDe(v.fecha) === mes) : ventas;
+  const meses = mes === null ? null : Array.isArray(mes) ? mes : [mes];
+  const filtradas = meses
+    ? ventas.filter((v) => meses.includes(mesDe(v.fecha)))
+    : ventas;
   const acumulado = new Map<string, FilaProducto>();
 
   for (const venta of filtradas) {
@@ -183,7 +190,12 @@ export function topProductos(
   }
 
   return [...acumulado.values()]
-    .sort((a, b) => b.ingresos - a.ingresos || b.unidades - a.unidades)
+    .sort(
+      (a, b) =>
+        b[criterio] - a[criterio] ||
+        b.ingresos - a.ingresos ||
+        b.unidades - a.unidades
+    )
     .slice(0, limite);
 }
 

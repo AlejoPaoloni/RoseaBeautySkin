@@ -11,6 +11,7 @@ import {
 } from "@/lib/db-finanzas";
 import { listarClientas, reponerStock } from "@/lib/db-gestion";
 import {
+  type CriterioRanking,
   formatearFecha,
   gastosPorCategoria,
   mesActual,
@@ -31,6 +32,7 @@ import VentaForm from "@/components/admin/finanzas/VentaForm";
 import GastoForm from "@/components/admin/finanzas/GastoForm";
 
 const MESES_EN_GRAFICO = 6;
+const RANKING_LIMITE = 10;
 
 export default function FinanzasPage() {
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -38,6 +40,8 @@ export default function FinanzasPage() {
   const [gastos, setGastos] = useState<Gasto[]>([]);
   const [clientas, setClientas] = useState<Clienta[]>([]);
   const [mes, setMes] = useState(mesActual());
+  const [periodoRanking, setPeriodoRanking] = useState<"mes" | "12m">("mes");
+  const [criterio, setCriterio] = useState<CriterioRanking>("ingresos");
   const [cargando, setCargando] = useState(true);
   const [ventaAbierta, setVentaAbierta] = useState(false);
   const [gastoAbierto, setGastoAbierto] = useState(false);
@@ -181,13 +185,58 @@ export default function FinanzasPage() {
             <div className="mt-6 grid gap-6 lg:grid-cols-2">
               <section className="rounded-2xl border border-neutral-200 bg-white p-5">
                 <ListaBarras
-                  titulo="Top productos del mes"
-                  vacio="Todavía no hay ventas este mes."
-                  filas={topProductos(ventas, mes).map((f) => ({
+                  titulo="Más vendidos"
+                  vacio={
+                    periodoRanking === "mes"
+                      ? "Todavía no hay ventas este mes."
+                      : "Todavía no hay ventas en los últimos 12 meses."
+                  }
+                  acciones={
+                    <div className="flex gap-2">
+                      <select
+                        aria-label="Período del ranking"
+                        value={periodoRanking}
+                        onChange={(e) =>
+                          setPeriodoRanking(e.target.value as "mes" | "12m")
+                        }
+                        className="rounded-lg border border-neutral-200 bg-white px-2 py-1 text-xs"
+                      >
+                        <option value="mes">{nombreMes(mes)}</option>
+                        <option value="12m">Últimos 12 meses</option>
+                      </select>
+                      <select
+                        aria-label="Ordenar ranking por"
+                        value={criterio}
+                        onChange={(e) =>
+                          setCriterio(e.target.value as CriterioRanking)
+                        }
+                        className="rounded-lg border border-neutral-200 bg-white px-2 py-1 text-xs"
+                      >
+                        <option value="ingresos">Por ingresos</option>
+                        <option value="unidades">Por unidades</option>
+                        <option value="ganancia">Por ganancia</option>
+                      </select>
+                    </div>
+                  }
+                  formato={
+                    criterio === "unidades" ? (n) => `${n} u` : formatearPrecio
+                  }
+                  filas={topProductos(
+                    ventas,
+                    periodoRanking === "mes" ? mes : ultimosMeses(12, mesActual()),
+                    RANKING_LIMITE,
+                    criterio
+                  ).map((f) => ({
                     clave: f.nombre,
                     etiqueta: f.nombre,
-                    monto: f.ingresos,
-                    detalle: `${f.unidades} u · ${formatearPrecio(f.ganancia)}`,
+                    monto: f[criterio],
+                    // El detalle muestra las otras dos medidas.
+                    detalle:
+                      criterio === "unidades"
+                        ? formatearPrecio(f.ingresos)
+                        : criterio === "ganancia"
+                          ? `${f.unidades} u · ${formatearPrecio(f.ingresos)}`
+                          : `${f.unidades} u · ${formatearPrecio(f.ganancia)}`,
                   }))}
                 />
               </section>

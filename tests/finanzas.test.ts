@@ -217,6 +217,34 @@ describe("topProductos", () => {
   });
 });
 
+describe("topProductos con periodo y criterio", () => {
+  const ventas = [
+    venta({
+      fecha: "2026-08-15",
+      items: [item({ nombre: "Labial", precio_unitario: 5000, costo_unitario: 1000, cantidad: 6 })],
+    }),
+    venta({
+      fecha: "2026-09-02",
+      items: [item({ nombre: "Base", precio_unitario: 40000, costo_unitario: 35000, cantidad: 1 })],
+    }),
+  ];
+
+  it("acepta varios meses juntos", () => {
+    expect(topProductos(ventas, ["2026-08", "2026-09"]).map((f) => f.nombre)).toEqual([
+      "Base",
+      "Labial",
+    ]);
+    expect(topProductos(ventas, ["2026-09"]).map((f) => f.nombre)).toEqual(["Base"]);
+  });
+
+  it("ordena por el criterio elegido", () => {
+    // Labial: 30000 ingresos, 6 u, 24000 ganancia. Base: 40000, 1 u, 5000.
+    expect(topProductos(ventas, null, 5, "ingresos")[0].nombre).toBe("Base");
+    expect(topProductos(ventas, null, 5, "unidades")[0].nombre).toBe("Labial");
+    expect(topProductos(ventas, null, 5, "ganancia")[0].nombre).toBe("Labial");
+  });
+});
+
 describe("gastosPorCategoria", () => {
   it("suma por categoria, calcula porcentaje y descarta las vacias", () => {
     const gastos = [

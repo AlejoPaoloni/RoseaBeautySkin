@@ -5,6 +5,8 @@ import {
   checklistPorDefecto,
   coincide,
   estadoSegunStock,
+  paraReponer,
+  textoReposicion,
   esIdea,
   grillaMes,
   ideas,
@@ -17,7 +19,7 @@ import {
   tareaVencida,
   totalPedido,
 } from "@/lib/gestion";
-import type { Pedido, Producto, Publicacion, Tarea } from "@/lib/types";
+import type { Pedido, Producto, Publicacion, Tarea, Venta } from "@/lib/types";
 
 let n = 0;
 
@@ -293,5 +295,107 @@ describe("estadoSegunStock", () => {
   it("nunca toca un Por Encargo: se pide aunque no haya stock", () => {
     expect(estadoSegunStock("Por Encargo", 0)).toBe("Por Encargo");
     expect(estadoSegunStock("Por Encargo", 3)).toBe("Por Encargo");
+  });
+});
+
+function ventaDe(fecha: string, productoId: string, cantidad: number): Venta {
+  n += 1;
+  return {
+    id: `v-${n}`,
+    fecha,
+    cliente: null,
+    cliente_id: null,
+    canal: "Instagram",
+    nota: null,
+    created_at: `${fecha}T12:00:00Z`,
+    items: [
+      {
+        id: `vi-${n}`,
+        venta_id: `v-${n}`,
+        producto_id: productoId,
+        nombre: "x",
+        cantidad,
+        precio_unitario: 10000,
+        costo_unitario: 5000,
+      },
+    ],
+  };
+}
+
+describe("paraReponer", () => {
+  const HOY = "2026-09-28";
+
+  it("junta los Sin stock y los Disponible con stock bajo, nunca Por Encargo", () => {
+    const agotado = producto({ estado: "Sin stock", stock: 0 });
+    const bajo = producto({ estado: "Disponible", stock: 1, stock_minimo: 2 });
+    const sobra = producto({ estado: "Disponible", stock: 10, stock_minimo: 2 });
+    const sinControl = producto({ estado: "Disponible", stock: null });
+    const encargo = producto({ estado: "Por Encargo", stock: 0 });
+    const filas = paraReponer([agotado, bajo, sobra, sinControl, encargo], [], HOY);
+    expect(filas.map((f) => f.producto.id)).toEqual([agotado.id, bajo.id]);
+    expect(filas.map((f) => f.motivo)).toEqual(["Sin stock", "Stock bajo"]);
+  });
+
+  it("cuenta lo vendido en los ultimos 90 dias, no antes", () => {
+    const p = producto({ estado: "Sin stock", stock: 0 });
+    const ventas = [
+      ventaDe("2026-09-20", p.id, 2),
+      ventaDe("2026-07-01", p.id, 1), // dentro: 89 dias
+      ventaDe("2026-06-01", p.id, 5), // fuera
+    ];
+    expect(paraReponer([p], ventas, HOY)[0].vendidas).toBe(3);
+  });
+
+  it("sugiere lo vendido menos lo que queda, y al menos pasar el minimo", () => {
+    const vendido = producto({ estado: "Disponible", stock: 1, stock_minimo: 1 });
+    const quieto = producto({ estado: "Sin stock", stock: 0, stock_minimo: 1 });
+    const filas = paraReponer(
+      [vendido, quieto],
+      [ventaDe("2026-09-01", vendido.id, 4)],
+      HOY
+    );
+    const de = (id: string) => filas.find((f) => f.producto.id === id)!;
+    expect(de(vendido.id).sugerido).toBe(3); // vendio 4, le queda 1
+    expect(de(quieto.id).sugerido).toBe(2); // sin ventas: minimo 1 + 1
+  });
+
+  it("ordena Sin stock primero y dentro, lo mas vendido arriba", () => {
+    const a = producto({ estado: "Sin stock", stock: 0 });
+    const b = producto({ estado: "Sin stock", stock: 0 });
+    const c = producto({ estado: "Disponible", stock: 0, stock_minimo: 1 });
+    const filas = paraReponer([c, a, b], [ventaDe("2026-09-10", b.id, 3)], HOY);
+    expect(filas.map((f) => f.producto.id)).toEqual([b.id, a.id, c.id]);
+  });
+});
+
+describe("textoReposicion", () => {
+  it("arma una linea por producto con marca y cantidad", () => {
+    const texto = textoReposicion([
+      { producto: producto({ marca: "rhode", nombre: "Pocket Blush" }), cantidad: 2 },
+      { producto: producto({ marca: null, nombre: "Brocha" }), cantidad: 1 },
+    ]);
+    expect(texto).toContain("2 × rhode Pocket Blush");
+    expect(texto).toContain("1 × Brocha");
+  });
+
+  it("suma el tono: cada tono es un producto aparte", () => {
+    const texto = textoReposicion([
+      {
+        producto: producto({
+          marca: "e.l.f.",
+          nombre: "Hydrating Camo Concealer",
+          tonos: [{ nombre: "Fair Warm", hex: "#e0b8a0" }],
+        }),
+        cantidad: 1,
+      },
+    ]);
+    expect(texto).toContain("1 × e.l.f. Hydrating Camo Concealer (Fair Warm)");
+  });
+
+  it("saltea lo que quedo en 0", () => {
+    const texto = textoReposicion([
+      { producto: producto({ nombre: "Nada" }), cantidad: 0 },
+    ]);
+    expect(texto).not.toContain("Nada");
   });
 });

@@ -11,6 +11,7 @@ import {
   subirImagen,
 } from "@/lib/db";
 import { formatearPrecio } from "@/lib/catalog";
+import { estadoSegunStock } from "@/lib/gestion";
 import { comprimirImagen } from "@/lib/imagen";
 
 interface Props {
@@ -49,6 +50,8 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
   const [estado, setEstado] = useState<Estado>(
     producto?.estado ?? "Disponible"
   );
+  // Aviso cuando el estado cambia solo por el stock (ver cambiarStock).
+  const [avisoEstado, setAvisoEstado] = useState<string | null>(null);
   const [destacado, setDestacado] = useState(producto?.destacado ?? false);
   const [tonos, setTonos] = useState<Tono[]>(producto?.tonos ?? []);
   const [archivo, setArchivo] = useState<File | null>(null);
@@ -75,6 +78,25 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
   // Los por encargo se cotizan por consulta: la landing no muestra su precio,
   // asi que tampoco tiene sentido exigirlo aca.
   const esPorEncargo = estado === "Por Encargo";
+
+  // Misma regla que una venta (estadoSegunStock): reponer unidades a un Sin
+  // stock lo vuelve Disponible, y dejarlo en 0 lo pasa a Sin stock. Se aplica
+  // al tipear y no al guardar, para que el cambio se vea en el selector de
+  // Estado y se pueda corregir a mano antes de guardar.
+  function cambiarStock(valor: string) {
+    setStock(valor);
+    if (valor.trim() === "") return;
+    const unidades = Number(valor);
+    if (!Number.isInteger(unidades) || unidades < 0) return;
+    const nuevo = estadoSegunStock(estado, unidades);
+    if (nuevo === estado) return;
+    setEstado(nuevo);
+    setAvisoEstado(
+      nuevo === "Disponible"
+        ? "Pasó a Disponible. Revisá el precio: el pedido nuevo puede haber llegado a otro precio, y la web lo vuelve a mostrar."
+        : "Pasó a Sin stock: la web va a mostrar “Precio a consultar”."
+    );
+  }
 
   // Feedback en vivo del margen mientras se tipea precio y costo.
   const margen =
@@ -323,7 +345,7 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
               min={0}
               step={1}
               value={stock}
-              onChange={(e) => setStock(e.target.value)}
+              onChange={(e) => cambiarStock(e.target.value)}
               placeholder="Vacío = no controlar"
               className="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-rosea-300"
             />
@@ -376,7 +398,10 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
           Estado
           <select
             value={estado}
-            onChange={(e) => setEstado(e.target.value as Estado)}
+            onChange={(e) => {
+              setEstado(e.target.value as Estado);
+              setAvisoEstado(null);
+            }}
             className="mt-1 w-full rounded-lg border border-neutral-200 px-2 py-2 text-sm"
           >
             {ESTADOS.map((e) => (
@@ -384,6 +409,11 @@ export default function ProductForm({ producto, onClose, onSaved }: Props) {
             ))}
           </select>
         </label>
+        {avisoEstado && (
+          <p role="status" className="mt-1 text-xs text-amber-800">
+            {avisoEstado}
+          </p>
+        )}
 
         <label className="mt-4 flex items-center gap-2 text-sm text-neutral-600">
           <input

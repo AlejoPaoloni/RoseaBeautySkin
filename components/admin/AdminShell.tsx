@@ -36,6 +36,10 @@ const IconoFinanzas = trazo(
 const IconoPedidos = trazo(
   "M3.5 7.5 10 4l6.5 3.5v5L10 16l-6.5-3.5v-5ZM3.5 7.5 10 11m0 0 6.5-3.5M10 11v5"
 );
+// Flechas en circulo: volver a llenar lo que se vendio.
+const IconoReposicion = trazo(
+  "M15.5 8A5.75 5.75 0 0 0 4.9 6.8M4.5 12a5.75 5.75 0 0 0 10.6 1.2M15.5 4.5V8H12M4.5 15.5V12H8"
+);
 const IconoClientas = trazo(
   "M10 10a2.75 2.75 0 1 0 0-5.5 2.75 2.75 0 0 0 0 5.5ZM4.5 16.5c0-2.5 2.5-4 5.5-4s5.5 1.5 5.5 4"
 );
@@ -68,6 +72,7 @@ const SECCIONES: Seccion[] = [
   { href: "/admin/finanzas", etiqueta: "Finanzas", icono: IconoFinanzas },
   { href: "/admin/calculadora", etiqueta: "Calculadora", icono: IconoCalculadora },
   { href: "/admin/pedidos", etiqueta: "Pedidos", icono: IconoPedidos },
+  { href: "/admin/reposicion", etiqueta: "Reposición", icono: IconoReposicion },
   { href: "/admin/clientas", etiqueta: "Clientas", icono: IconoClientas },
   { href: "/admin/tareas", etiqueta: "Tareas", icono: IconoTareas },
   { href: "/admin/seguridad", etiqueta: "Seguridad", icono: IconoSeguridad },

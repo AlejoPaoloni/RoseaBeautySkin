@@ -27,6 +27,9 @@ var PESTANA_CLIENTAS = "Clientas";
 var PESTANA_PEDIDOS = "Pedidos";
 var PESTANA_PUBLICACIONES = "Contenido";
 var PESTANA_TAREAS = "Tareas";
+var PESTANA_REPOSICION = "Reposición";
+var PESTANA_MAS_VENDIDOS = "Más vendidos";
+var ZONA = "America/Argentina/Buenos_Aires";
 
 // Paleta de marca (misma escala que app/globals.css: --color-rosea-*).
 // Para el grafico de 2 series se reutilizan #c1554a / #4a7fb5 en vez de dos
@@ -106,7 +109,7 @@ function sincronizar() {
   var productos = consultar(
     config,
     token,
-    "/rest/v1/productos?select=id,nombre,marca,categoria,subcategoria,estado,precio,stock,stock_minimo"
+    "/rest/v1/productos?select=id,nombre,marca,categoria,subcategoria,estado,precio,costo,stock,stock_minimo,tonos"
   );
 
   // Un solo calculo mensual, reusado por la tabla de Resumen y por las
@@ -118,6 +121,8 @@ function sincronizar() {
   escribirResumenMensual(mesesAsc);
   escribirPanel(mesesAsc);
   escribirStock(productos);
+  escribirReposicion(productos, ventas);
+  escribirMasVendidos(ventas);
   escribirClientas(clientas);
   escribirPedidos(pedidos, clientas);
   escribirPublicaciones(publicaciones, productos);
@@ -878,6 +883,156 @@ function escribirClientas(clientas) {
   agregarAireColumnas(hoja, cols);
 }
 
+// --- Reposicion ---
+
+// Misma regla que la pantalla Reposicion del admin (paraReponer en
+// lib/gestion.ts): Sin stock + Disponible con stock bajo, nunca Por Encargo;
+// sugerido = vendido en 90 dias menos lo que queda, como minimo pasar el
+// aviso de stock bajo.
+var DIAS_REPOSICION = 90;
+
+function escribirReposicion(productos, ventas) {
+  var encabezados = [
+    "Producto", "Marca", "Tono", "Motivo", "Quedan", "Vendidas (" + DIAS_REPOSICION + " días)",
+    "Sugerido", "Costo unitario", "Costo estimado",
+  ];
+
+  var hoy = Utilities.formatDate(new Date(), ZONA, "yyyy-MM-dd");
+  var d = new Date(hoy + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() - DIAS_REPOSICION);
+  var desde = d.toISOString().slice(0, 10);
+
+  var vendidas = {};
+  ventas.forEach(function (venta) {
+    if (venta.fecha < desde) return;
+    (venta.venta_items || []).forEach(function (item) {
+      if (!item.producto_id) return;
+      vendidas[item.producto_id] = (vendidas[item.producto_id] || 0) + item.cantidad;
+    });
+  });
+
+  var datos = [];
+  productos.forEach(function (p) {
+    var motivo = p.estado === "Sin stock"
+      ? "Sin stock"
+      : p.estado === "Disponible" && stockBajo(p) ? "Stock bajo" : null;
+    if (!motivo) return;
+    var quedan = p.stock || 0;
+    var v = vendidas[p.id] || 0;
+    var sugerido = Math.max(v - quedan, p.stock_minimo + 1 - quedan, 1);
+    datos.push({ p: p, motivo: motivo, quedan: quedan, vendidas: v, sugerido: sugerido });
+  });
+  datos.sort(function (a, b) {
+    return (b.motivo === "Sin stock") - (a.motivo === "Sin stock") ||
+      b.vendidas - a.vendidas ||
+      a.p.nombre.localeCompare(b.p.nombre);
+  });
+
+  var filas = datos.map(function (x) {
+    var costo = x.p.costo == null ? "" : x.p.costo;
+    return [
+      // Cada tono es un producto aparte con un solo tono cargado.
+      x.p.nombre, x.p.marca || "",
+      x.p.tonos && x.p.tonos.length === 1 ? x.p.tonos[0].nombre : "",
+      x.motivo, x.quedan, x.vendidas, x.sugerido,
+      costo, costo === "" ? "" : costo * x.sugerido,
+    ];
+  });
+
+  var hoja = prepararHoja(PESTANA_REPOSICION);
+  var cols = encabezados.length;
+  hoja.getRange(1, 1, 1, cols).setValues([encabezados]);
+
+  if (filas.length > 0) {
+    hoja.getRange(2, 1, filas.length, cols).setValues(filas);
+    ajustarFilasDatos(hoja, filas.length);
+    formatoMoneda(hoja.getRange(2, 8, filas.length + 1, 2));
+    datos.forEach(function (x, i) {
+      // Rojo Sin stock / ambar stock bajo, como en el admin.
+      hoja.getRange(i + 2, 4).setFontColor(x.motivo === "Sin stock" ? ESTADO_COLOR["Sin stock"] : "#92400e");
+    });
+
+    var filaTotal = filas.length + 2;
+    var totalUnidades = datos.reduce(function (t, x) { return t + x.sugerido; }, 0);
+    var totalCosto = filas.reduce(function (t, f) { return t + (f[8] === "" ? 0 : f[8]); }, 0);
+    hoja.getRange(filaTotal, 6).setValue("TOTAL").setHorizontalAlignment("right");
+    hoja.getRange(filaTotal, 7).setValue(totalUnidades);
+    hoja.getRange(filaTotal, 9).setValue(totalCosto);
+    estilarFilaTotal(hoja.getRange(filaTotal, 1, 1, cols));
+
+    aplicarBandas(hoja.getRange(1, 1, filas.length + 1, cols));
+    hoja.getRange(1, 1, filas.length + 1, cols).createFilter();
+  } else {
+    hoja.getRange(2, 1).setValue("No hay nada para reponer.").setFontColor(COLOR.textoSuave);
+  }
+
+  estilarEncabezado(hoja.getRange(1, 1, 1, cols));
+  hoja.getRange(1, 1, hoja.getMaxRows(), cols).setFontFamily(FUENTE);
+  hoja.setFrozenRows(1);
+  hoja.setRowHeight(1, 30);
+  hoja.autoResizeColumns(1, cols);
+  hoja.setColumnWidth(1, Math.max(hoja.getColumnWidth(1), 220)); // Producto
+  agregarAireColumnas(hoja, cols);
+}
+
+// --- Mas vendidos ---
+
+// Ranking de los ultimos 12 meses por ingresos, todos los productos (el
+// admin muestra el top 10 y deja elegir periodo y criterio). Agrupa por
+// nombre snapshot, igual que topProductos en lib/finanzas.ts.
+function escribirMasVendidos(ventas) {
+  var encabezados = ["Producto", "Unidades", "Ingresos", "Ganancia", "Margen"];
+
+  var meses = [];
+  var cursor = Utilities.formatDate(new Date(), ZONA, "yyyy-MM").split("-").map(Number);
+  for (var i = 0; i < 12; i++) {
+    meses.push(cursor[0] + "-" + String(cursor[1]).padStart(2, "0"));
+    cursor = cursor[1] === 1 ? [cursor[0] - 1, 12] : [cursor[0], cursor[1] - 1];
+  }
+
+  var acumulado = {};
+  ventas.forEach(function (venta) {
+    if (meses.indexOf(venta.fecha.slice(0, 7)) === -1) return;
+    (venta.venta_items || []).forEach(function (item) {
+      var f = acumulado[item.nombre] || { nombre: item.nombre, unidades: 0, ingresos: 0, ganancia: 0 };
+      f.unidades += item.cantidad;
+      f.ingresos += item.precio_unitario * item.cantidad;
+      f.ganancia += (item.precio_unitario - item.costo_unitario) * item.cantidad;
+      acumulado[item.nombre] = f;
+    });
+  });
+
+  var filas = Object.keys(acumulado)
+    .map(function (k) { return acumulado[k]; })
+    .sort(function (a, b) { return b.ingresos - a.ingresos || b.unidades - a.unidades; })
+    .map(function (f) {
+      return [f.nombre, f.unidades, f.ingresos, f.ganancia, f.ingresos ? f.ganancia / f.ingresos : 0];
+    });
+
+  var hoja = prepararHoja(PESTANA_MAS_VENDIDOS);
+  var cols = encabezados.length;
+  hoja.getRange(1, 1, 1, cols).setValues([encabezados]);
+
+  if (filas.length > 0) {
+    hoja.getRange(2, 1, filas.length, cols).setValues(filas);
+    ajustarFilasDatos(hoja, filas.length);
+    formatoMoneda(hoja.getRange(2, 3, filas.length, 2));
+    hoja.getRange(2, 5, filas.length, 1).setNumberFormat("0%");
+    aplicarBandas(hoja.getRange(1, 1, filas.length + 1, cols));
+    hoja.getRange(1, 1, filas.length + 1, cols).createFilter();
+  } else {
+    hoja.getRange(2, 1).setValue("Sin ventas en los últimos 12 meses.").setFontColor(COLOR.textoSuave);
+  }
+
+  estilarEncabezado(hoja.getRange(1, 1, 1, cols));
+  hoja.getRange(1, 1, hoja.getMaxRows(), cols).setFontFamily(FUENTE);
+  hoja.setFrozenRows(1);
+  hoja.setRowHeight(1, 30);
+  hoja.autoResizeColumns(1, cols);
+  hoja.setColumnWidth(1, Math.max(hoja.getColumnWidth(1), 220)); // Producto
+  agregarAireColumnas(hoja, cols);
+}
+
 // --- Pedidos ---
 
 // Una fila por pedido (no por item, a diferencia de Ventas): la seña y el
@@ -1049,6 +1204,15 @@ function escribirTareas(tareas) {
 
 function ordenarPestanas() {
   var libro = SpreadsheetApp.getActiveSpreadsheet();
+  // Se mueven al frente en orden inverso: quedan Panel, Stock, Reposicion,
+  // Mas vendidos y despues el resto.
+  [PESTANA_MAS_VENDIDOS, PESTANA_REPOSICION].forEach(function (nombre) {
+    var hoja = libro.getSheetByName(nombre);
+    if (hoja) {
+      libro.setActiveSheet(hoja);
+      libro.moveActiveSheet(1);
+    }
+  });
   var stock = libro.getSheetByName(PESTANA_STOCK);
   if (stock) {
     libro.setActiveSheet(stock);
