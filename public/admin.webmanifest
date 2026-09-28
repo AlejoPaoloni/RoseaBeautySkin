@@ -1,0 +1,14 @@
+{
+  "id": "/admin",
+  "name": "Rosea Beauty | Admin",
+  "short_name": "Rosea Admin",
+  "start_url": "/admin",
+  "scope": "/admin",
+  "display": "standalone",
+  "background_color": "#faf1ef",
+  "theme_color": "#bd7c72",
+  "lang": "es-AR",
+  "icons": [
+    { "src": "/apple-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
