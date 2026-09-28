@@ -4,7 +4,12 @@ import { useEffect, useState } from "react";
 import type { Estado, Producto } from "@/lib/types";
 import { CATEGORIAS, ESTADOS } from "@/lib/types";
 import type { Categoria } from "@/lib/types";
-import { agruparPorEstado, agruparPorSubcategoria } from "@/lib/catalog";
+import {
+  agruparPorEstado,
+  agruparPorSubcategoria,
+  ordenarProductos,
+  productosPorEncargo,
+} from "@/lib/catalog";
 import { productosStockBajo } from "@/lib/gestion";
 import {
   actualizarProducto,
@@ -34,6 +39,11 @@ const ESTADO_COLOR: Record<Estado, string> = {
   "Sin stock": "text-red-600",
 };
 
+// Los Por Encargo no van por subcategoria: tienen su propia lista al final,
+// todos juntos, igual que en la web publica (el catalogo los excluye y
+// PorEncargoSection los muestra en una sola grilla).
+const ESTADOS_CATALOGO = ESTADOS.filter((e) => e !== "Por Encargo");
+
 export default function AdminPage() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -41,6 +51,9 @@ export default function AdminPage() {
   const [formAbierto, setFormAbierto] = useState(false);
 
   const bajoStock = productosStockBajo(productos);
+  const enCatalogo = productos.filter((p) => p.estado !== "Por Encargo");
+  // Mismo orden que la seccion "Productos por encargo" de la web.
+  const porEncargo = ordenarProductos(productosPorEncargo(productos));
 
   async function cargar() {
     try {
@@ -94,13 +107,19 @@ export default function AdminPage() {
     }
   }
 
-  function onDragEnd(cat: Categoria, sub: string) {
+  // Lista de una subcategoria tal como se ve: Disponibles y despues Sin stock.
+  function grupoDeSubcategoria(cat: Categoria, sub: string): Producto[] {
+    const porEstado = agruparPorEstado(
+      agruparPorSubcategoria(enCatalogo, cat)[sub]
+    );
+    return ESTADOS_CATALOGO.flatMap((e) => porEstado[e]);
+  }
+
+  // `grupo` tiene que ser la lista en el mismo orden que se ve en pantalla.
+  function onDragEnd(grupo: Producto[]) {
     return async (event: DragEndEvent) => {
       const { active, over } = event;
       if (!over || active.id === over.id) return;
-      const items = agruparPorSubcategoria(productos, cat)[sub];
-      // Mismo orden que se ve en pantalla: agrupado por estado.
-      const grupo = Object.values(agruparPorEstado(items)).flat();
       const desde = grupo.findIndex((p) => p.id === active.id);
       const hasta = grupo.findIndex((p) => p.id === over.id);
       if (desde === -1 || hasta === -1) return;
@@ -168,9 +187,10 @@ export default function AdminPage() {
             {CATEGORIAS.map((cat) => (
             <section key={cat} className="mb-10">
               <h2 className="font-serif text-2xl text-rosea-700">{cat}</h2>
-              {Object.entries(agruparPorSubcategoria(productos, cat)).map(
+              {Object.entries(agruparPorSubcategoria(enCatalogo, cat)).map(
                 ([sub, items]) => {
                   const porEstado = agruparPorEstado(items);
+                  const grupo = grupoDeSubcategoria(cat, sub);
                   return (
                   <div key={sub} className="mt-4">
                     <h3 className="text-sm font-medium uppercase tracking-wider text-neutral-400">
@@ -178,16 +198,14 @@ export default function AdminPage() {
                     </h3>
                     <DndContext
                       collisionDetection={closestCenter}
-                      onDragEnd={onDragEnd(cat, sub)}
+                      onDragEnd={onDragEnd(grupo)}
                     >
                       <SortableContext
-                        items={Object.values(porEstado)
-                          .flat()
-                          .map((p) => p.id)}
+                        items={grupo.map((p) => p.id)}
                         strategy={verticalListSortingStrategy}
                       >
                         <div className="mt-2 space-y-4">
-                          {ESTADOS.map((estado) => {
+                          {ESTADOS_CATALOGO.map((estado) => {
                             const grupo = porEstado[estado];
                             if (grupo.length === 0) return null;
                             return (
@@ -229,6 +247,42 @@ export default function AdminPage() {
               )}
             </section>
           ))}
+            {porEncargo.length > 0 && (
+              <section className="mb-10 border-t border-rosea-100 pt-8">
+                <h2 className="font-serif text-2xl text-amber-800">
+                  Por Encargo ({porEncargo.length})
+                </h2>
+                <p className="mt-1 text-sm text-neutral-400">
+                  Todos juntos, sin importar la categoría. El orden es el de la
+                  sección &quot;Productos por encargo&quot; de la web.
+                </p>
+                <DndContext
+                  collisionDetection={closestCenter}
+                  onDragEnd={onDragEnd(porEncargo)}
+                >
+                  <SortableContext
+                    items={porEncargo.map((p) => p.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="mt-4 space-y-2">
+                      {porEncargo.map((p) => (
+                        <SortableRow
+                          key={p.id}
+                          producto={p}
+                          onEstado={(e) => cambiarEstado(p, e)}
+                          onDestacado={() => cambiarDestacado(p)}
+                          onEditar={() => {
+                            setEditando(p);
+                            setFormAbierto(true);
+                          }}
+                          onBorrar={() => borrar(p)}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              </section>
+            )}
           </>
         )}
       </main>
