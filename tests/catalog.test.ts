@@ -221,10 +221,29 @@ describe("rangoPrecios", () => {
 });
 
 describe("tienePrecioPublico", () => {
-  it("es falso solo para los por encargo", () => {
+  it("solo los disponibles muestran precio", () => {
     expect(tienePrecioPublico(producto({ estado: "Disponible" }))).toBe(true);
-    expect(tienePrecioPublico(producto({ estado: "Sin stock" }))).toBe(true);
+    // Sin stock: el proximo pedido puede llegar a otro precio.
+    expect(tienePrecioPublico(producto({ estado: "Sin stock" }))).toBe(false);
     expect(tienePrecioPublico(producto({ estado: "Por Encargo" }))).toBe(false);
+  });
+});
+
+describe("filtrarProductos con precio oculto", () => {
+  it("la barra de precio no esconde un Sin stock por un precio que no se ve", () => {
+    const caro = producto({ precio: 90000, estado: "Sin stock" });
+    const disponible = producto({ precio: 20000, estado: "Disponible" });
+    const r = filtrarProductos([caro, disponible], null, null, false, null, 10000, 30000);
+    expect(r).toContain(caro);
+    expect(r).toContain(disponible);
+  });
+
+  it("rangoPrecios no cuenta los Sin stock para los extremos", () => {
+    const ps = [
+      producto({ precio: 20000, estado: "Disponible" }),
+      producto({ precio: 90000, estado: "Sin stock" }),
+    ];
+    expect(rangoPrecios(ps)).toEqual({ piso: 20000, tope: 20000 });
   });
 });
 

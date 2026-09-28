@@ -34,8 +34,8 @@ export default function ProductoJsonLd({ producto }: { producto: Producto }) {
     ...(producto.tonos && producto.tonos.length > 0
       ? { color: producto.tonos.map((t) => t.nombre).join(", ") }
       : {}),
-    // Sin offers en los por encargo: se cotizan por consulta y el precio no
-    // se muestra en ningun lado publico. Google exige price en todo Offer
+    // Sin offers en por encargo y sin stock: se cotizan por consulta y el
+    // precio no se muestra en ningun lado publico. Google exige price en todo Offer
     // que declares — uno sin price no es "mas discreto", es invalido, y asi
     // lo marcaba Search Console en Fragmentos de producto. Omitir offers
     // entero deja el Product igual de valido, solo sin la parte de precio.

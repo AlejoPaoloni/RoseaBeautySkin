@@ -19,8 +19,8 @@ export function urlProducto(producto: Producto): string {
 // En desktop, o en navegadores sin Web Share, copia el texto con el link al
 // portapapeles. Devuelve true si se compartio o copio, false si se cancelo.
 export async function compartirProducto(producto: Producto): Promise<boolean> {
-  // Un por encargo se comparte sin precio: se cotiza por consulta, mandar un
-  // numero por WhatsApp seria contradecir a la card.
+  // Por encargo y Sin stock se comparten sin precio: se cotizan por
+  // consulta, mandar un numero por WhatsApp seria contradecir a la card.
   const texto = tienePrecioPublico(producto)
     ? `${producto.nombre} - ${formatearPrecio(producto.precio)}`
     : `${producto.nombre} - precio a consultar`;

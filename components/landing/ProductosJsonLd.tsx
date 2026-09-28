@@ -32,9 +32,9 @@ export default function ProductosJsonLd({
         image: p.imagen_url,
         url: `${siteUrl()}${rutaProducto(p)}`,
         ...(p.marca ? { brand: { "@type": "Brand", name: p.marca } } : {}),
-        // Sin offers en los por encargo: Offer sin price es invalido para
-        // Google (lo marcaba Fragmentos de producto en Search Console), y
-        // el precio de esos productos no se muestra en ningun lado publico.
+        // Sin offers en por encargo y sin stock: Offer sin price es invalido
+        // para Google (lo marcaba Fragmentos de producto en Search Console),
+        // y el precio de esos productos no se muestra en ningun lado publico.
         ...(tienePrecioPublico(p)
           ? {
               offers: {

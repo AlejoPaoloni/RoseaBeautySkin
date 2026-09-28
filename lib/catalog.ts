@@ -38,11 +38,13 @@ export function ordenarParaCatalogo(productos: Producto[]): Producto[] {
   );
 }
 
-// El precio de los productos por encargo se cotiza por consulta: se pide al
-// momento y depende del dolar del dia. No se muestra en ningun lado publico
-// — ni en la card, ni al compartir, ni en el JSON-LD.
+// Solo lo Disponible muestra precio. Por encargo se cotiza por consulta (se
+// pide al momento y depende del dolar del dia), y Sin stock tambien: el
+// proximo pedido puede llegar a otro precio. No se muestra en ningun lado
+// publico — ni en la card, ni al compartir, ni en el JSON-LD. El admin lo
+// sigue viendo (ProductRow no pasa por aca).
 export function tienePrecioPublico(producto: Producto): boolean {
-  return producto.estado !== "Por Encargo";
+  return producto.estado === "Disponible";
 }
 
 export function filtrarProductos(
@@ -67,9 +69,13 @@ export function filtrarProductos(
       (!q ||
         p.nombre.toLowerCase().includes(q) ||
         (p.marca?.toLowerCase().includes(q) ?? false)) &&
-      // == null para que 0 sea un limite valido, no "sin filtro"
-      (precioMin == null || p.precio >= precioMin) &&
-      (precioMax == null || p.precio <= precioMax)
+      // Sin precio publico (Sin stock) no entra en la barra de precio: su
+      // precio no se ve, filtrarlo por el lo haria desaparecer sin motivo
+      // visible (y rangoPrecios ya no lo cuenta para los extremos).
+      (!tienePrecioPublico(p) ||
+        // == null para que 0 sea un limite valido, no "sin filtro"
+        ((precioMin == null || p.precio >= precioMin) &&
+          (precioMax == null || p.precio <= precioMax)))
   );
 }
 
