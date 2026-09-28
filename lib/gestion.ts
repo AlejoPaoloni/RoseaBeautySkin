@@ -1,4 +1,5 @@
 import type {
+  Estado,
   PasoChecklist,
   Pedido,
   Producto,
@@ -78,6 +79,13 @@ export function agruparPorDia(
 
 export function llevaStock(producto: Producto): boolean {
   return producto.stock !== null;
+}
+
+// Estado que corresponde despues de mover el stock (venta o venta borrada).
+// Por Encargo no se toca: se pide aunque no haya unidades en mano.
+export function estadoSegunStock(actual: Estado, stock: number): Estado {
+  if (actual === "Por Encargo") return actual;
+  return stock > 0 ? "Disponible" : "Sin stock";
 }
 
 export function stockBajo(producto: Producto): boolean {

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
+import { estadoSegunStock } from "@/lib/gestion";
 import type {
   Clienta,
   Pedido,
@@ -240,13 +241,18 @@ async function moverStock(
     cambios.set(producto.id, acumulado + signo * item.cantidad);
   }
 
+  // El estado acompaña al stock: si una venta deja el producto en 0 pasa a
+  // "Sin stock" solo (antes quedaba "Disponible" y habia que cambiarlo a
+  // mano), y si borrar la venta le devuelve unidades vuelve a "Disponible".
   await Promise.all(
-    [...cambios].map(([id, stock]) =>
-      supabase
+    [...cambios].map(([id, stock]) => {
+      const nuevo = Math.max(stock, 0);
+      const producto = productos.find((p) => p.id === id)!;
+      return supabase
         .from("productos")
-        .update({ stock: Math.max(stock, 0) })
-        .eq("id", id)
-    )
+        .update({ stock: nuevo, estado: estadoSegunStock(producto.estado, nuevo) })
+        .eq("id", id);
+    })
   );
 }
 

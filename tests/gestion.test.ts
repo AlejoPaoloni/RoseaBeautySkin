@@ -4,6 +4,7 @@ import {
   agruparPorDia,
   checklistPorDefecto,
   coincide,
+  estadoSegunStock,
   esIdea,
   grillaMes,
   ideas,
@@ -269,5 +270,28 @@ describe("coincide", () => {
 
   it("null-safe: campos vacios no rompen la busqueda", () => {
     expect(coincide("algo", [null, null])).toBe(false);
+  });
+});
+
+describe("estadoSegunStock", () => {
+  it("un Disponible que se queda en 0 pasa a Sin stock", () => {
+    expect(estadoSegunStock("Disponible", 0)).toBe("Sin stock");
+  });
+
+  it("un Disponible con stock sigue Disponible", () => {
+    expect(estadoSegunStock("Disponible", 1)).toBe("Disponible");
+  });
+
+  it("un Sin stock que recupera stock vuelve a Disponible", () => {
+    expect(estadoSegunStock("Sin stock", 2)).toBe("Disponible");
+  });
+
+  it("un Sin stock en 0 se queda Sin stock", () => {
+    expect(estadoSegunStock("Sin stock", 0)).toBe("Sin stock");
+  });
+
+  it("nunca toca un Por Encargo: se pide aunque no haya stock", () => {
+    expect(estadoSegunStock("Por Encargo", 0)).toBe("Por Encargo");
+    expect(estadoSegunStock("Por Encargo", 3)).toBe("Por Encargo");
   });
 });
