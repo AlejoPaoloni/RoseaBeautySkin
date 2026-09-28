@@ -113,7 +113,7 @@ function sincronizar() {
   // tarjetas + grafico del Panel: evita que las dos vistas puedan divergir.
   var mesesAsc = calcularResumenMensual(ventas, gastos);
 
-  escribirVentas(ventas);
+  escribirVentas(ventas, clientas);
   escribirGastos(gastos);
   escribirResumenMensual(mesesAsc);
   escribirPanel(mesesAsc);
@@ -345,18 +345,31 @@ function estilarFilaTotal(rango) {
 
 // --- Ventas ---
 
-function escribirVentas(ventas) {
+function escribirVentas(ventas, clientas) {
   var encabezados = [
     "Fecha", "Clienta", "Canal", "Producto", "Cantidad",
     "Precio unitario", "Total renglón", "Costo unitario",
     "Ganancia renglón", "Nota", "ID venta",
   ];
+
+  // Igual que el dashboard (nombreClienta en app/admin/finanzas/page.tsx):
+  // la ficha manda; `cliente` es el nombre suelto de las ventas viejas. Una
+  // venta cargada eligiendo una clienta guarda solo cliente_id, y leer solo
+  // `cliente` dejaba la columna vacia.
+  function nombreDe(venta) {
+    if (venta.cliente_id) {
+      var c = clientas.filter(function (x) { return x.id === venta.cliente_id; })[0];
+      return c ? c.nombre : "Sin nombre";
+    }
+    return venta.cliente || "";
+  }
+
   var filas = [];
   ventas.forEach(function (venta) {
     (venta.venta_items || []).forEach(function (item) {
       filas.push([
         venta.fecha,
-        venta.cliente || "",
+        nombreDe(venta),
         venta.canal,
         item.nombre,
         item.cantidad,
