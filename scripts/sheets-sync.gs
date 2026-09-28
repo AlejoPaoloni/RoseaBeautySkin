@@ -276,6 +276,11 @@ function prepararHoja(nombre) {
   var libro = SpreadsheetApp.getActiveSpreadsheet();
   var hoja = libro.getSheetByName(nombre);
   if (!hoja) hoja = libro.insertSheet(nombre);
+  // Filas/columnas congeladas tambien sobreviven a clear(): si quedan de la
+  // corrida anterior (o las congela alguien a mano), un merge que las cruce
+  // falla. Cada pestaña vuelve a congelar lo suyo al final.
+  hoja.setFrozenRows(0);
+  hoja.setFrozenColumns(0);
   hoja.clear();
   hoja.getBandings().forEach(function (b) {
     b.remove();
@@ -380,7 +385,11 @@ function escribirVentas(ventas) {
       totalGanancia += f[8];
     });
     var filaTotal = filas.length + 2;
-    hoja.getRange(filaTotal, 1, 1, 4).merge().setValue("TOTAL").setHorizontalAlignment("right");
+    // Sin merge A:D como en Gastos: Ventas congela la columna A y Sheets no
+    // deja combinar una columna congelada con otras ("No puedes combinar
+    // columnas inmovilizadas con columnas moviles"). La etiqueta va sola en
+    // Producto, pegada a la columna de Cantidad.
+    hoja.getRange(filaTotal, 4).setValue("TOTAL").setHorizontalAlignment("right");
     hoja.getRange(filaTotal, 5).setValue(totalCant);
     hoja.getRange(filaTotal, 7).setValue(totalVenta);
     hoja.getRange(filaTotal, 9).setValue(totalGanancia);
