@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { imagenPermitida, remotePatterns } from "@/lib/imagenes";
 import { jsonLd } from "@/lib/jsonld";
+import { COLUMNAS_PUBLICAS } from "@/lib/supabase/server";
+import { readFileSync } from "node:fs";
 
 const SUPABASE = "https://miproyecto.supabase.co";
 const SITIO = "https://www.roseabeautyskin.com";
@@ -77,5 +79,23 @@ describe("remotePatterns", () => {
 
   it("sin URL de Supabase configurada no abre nada de mas", () => {
     expect(remotePatterns(undefined).map((p) => p.hostname)).toEqual(["cdn.shopify.com"]);
+  });
+});
+
+describe("columnas publicas de productos", () => {
+  it("la web no pide costo ni stock", () => {
+    for (const privada of ["costo", "stock", "stock_minimo"]) {
+      expect(COLUMNAS_PUBLICAS).not.toContain(privada);
+    }
+  });
+
+  it("coinciden con el grant de la migracion 011 (si no, la landing no carga)", () => {
+    const sql = readFileSync(
+      "supabase/migrations/011_productos_columnas_privadas.sql",
+      "utf8"
+    );
+    const grant = sql.match(/grant select \(([^)]*)\)/)![1];
+    const enMigracion = grant.split(",").map((c) => c.trim()).sort();
+    expect(enMigracion).toEqual([...COLUMNAS_PUBLICAS].sort());
   });
 });
