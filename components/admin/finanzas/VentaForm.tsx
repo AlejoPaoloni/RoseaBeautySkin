@@ -125,6 +125,12 @@ export default function VentaForm({
       setError("La cantidad tiene que ser 1 o más");
       return;
     }
+    // La base guarda enteros: con decimales el insert falla y solo se veria
+    // un "no se pudo guardar" sin explicacion.
+    if (items.some((l) => !Number.isInteger(l.cantidad) || !Number.isInteger(l.precio_unitario))) {
+      setError("Cantidad y precio van sin decimales");
+      return;
+    }
     if (!venta && medioPago === "") {
       setError("Elegí cómo te pagaron");
       return;
@@ -250,7 +256,14 @@ export default function VentaForm({
                   className="w-full rounded-lg border border-neutral-200 px-2 py-2 text-sm"
                   aria-label={`Producto del renglón ${i + 1}`}
                 >
-                  <option value="">Elegí un producto…</option>
+                  <option value="">
+                    {/* Renglon de un producto que se borro del catalogo: el
+                        nombre quedo guardado en la venta (producto_id pasa a
+                        null), asi que se muestra en vez del placeholder. */}
+                    {l.producto_id === null && l.nombre
+                      ? `${l.nombre} (ya no está en el catálogo)`
+                      : "Elegí un producto…"}
+                  </option>
                   {productos.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.marca ? `${p.marca} · ` : ""}

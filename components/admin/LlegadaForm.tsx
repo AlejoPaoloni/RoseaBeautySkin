@@ -180,7 +180,7 @@ export default function LlegadaForm({ productos, inicial, onClose, onSaved }: Pr
                       min={0}
                       step={1}
                       value={l.costo}
-                      onChange={(e) => editar(l.clave, { costo: Math.max(0, Number(e.target.value) || 0) })}
+                      onChange={(e) => editar(l.clave, { costo: Math.max(0, Math.round(Number(e.target.value) || 0)) })}
                       aria-label={`Costo unitario del producto ${i + 1}`}
                       className="w-full rounded-lg border border-neutral-200 px-2 py-2 text-sm outline-none focus:border-rosea-300"
                     />
@@ -218,7 +218,7 @@ export default function LlegadaForm({ productos, inicial, onClose, onSaved }: Pr
               min={0}
               step={1}
               value={envio}
-              onChange={(e) => setEnvio(Math.max(0, Number(e.target.value) || 0))}
+              onChange={(e) => setEnvio(Math.max(0, Math.round(Number(e.target.value) || 0)))}
               className="mt-1 w-full rounded-lg border border-neutral-200 px-3 py-2 text-sm outline-none focus:border-rosea-300"
             />
           </label>

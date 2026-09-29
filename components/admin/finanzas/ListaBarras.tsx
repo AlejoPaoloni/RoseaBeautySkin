@@ -61,7 +61,10 @@ export default function ListaBarras({
                   <div
                     className="h-full rounded-full"
                     style={{
-                      width: `${(f.monto / tope) * 100}%`,
+                      // Un monto negativo (ranking por ganancia de algo vendido
+                      // a perdida) daria un ancho invalido, que el navegador
+                      // ignora y dibuja la barra completa.
+                      width: `${Math.max(0, (f.monto / tope) * 100)}%`,
                       background: color,
                     }}
                   />
