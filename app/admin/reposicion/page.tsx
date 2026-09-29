@@ -12,6 +12,7 @@ import {
   paraReponer,
   textoReposicion,
 } from "@/lib/gestion";
+import LlegadaForm from "@/components/admin/LlegadaForm";
 
 // Lo que hay que volverle a pedir al proveedor: Sin stock y stock bajo, con
 // cuanto se vendio de cada uno para decidir cantidades. No guarda nada: la
@@ -23,17 +24,21 @@ export default function ReposicionPage() {
   // Cantidad elegida por producto; si no esta, vale la sugerida.
   const [cantidades, setCantidades] = useState<Record<string, number>>({});
   const [copiado, setCopiado] = useState(false);
+  const [llegadaAbierta, setLlegadaAbierta] = useState(false);
+  const [aviso, setAviso] = useState<string | null>(null);
+
+  async function cargar() {
+    try {
+      const [p, v] = await Promise.all([listarProductos(), listarVentas()]);
+      setProductos(p);
+      setVentas(v);
+    } finally {
+      setCargando(false);
+    }
+  }
 
   useEffect(() => {
-    (async () => {
-      try {
-        const [p, v] = await Promise.all([listarProductos(), listarVentas()]);
-        setProductos(p);
-        setVentas(v);
-      } finally {
-        setCargando(false);
-      }
-    })();
+    cargar();
   }, []);
 
   const filas = useMemo(
@@ -67,16 +72,50 @@ export default function ReposicionPage() {
     <div className="min-h-screen bg-rosea-50/50">
       <header className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-3 border-b border-rosea-100 bg-white px-6 py-3">
         <h1 className="font-serif text-xl">Reposición</h1>
-        <button
-          onClick={copiar}
-          disabled={aPedir.length === 0}
-          className="rounded-full bg-rosea-400 px-4 py-2 text-sm text-white hover:bg-rosea-500 disabled:opacity-40"
-        >
-          {copiado ? "¡Copiado!" : "Copiar para el proveedor"}
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={copiar}
+            disabled={aPedir.length === 0}
+            className="rounded-full bg-rosea-400 px-4 py-2 text-sm text-white hover:bg-rosea-500 disabled:opacity-40"
+          >
+            {copiado ? "¡Copiado!" : "Copiar para el proveedor"}
+          </button>
+          <button
+            onClick={() => {
+              setAviso(null);
+              setLlegadaAbierta(true);
+            }}
+            className="rounded-full px-4 py-2 text-sm text-rosea-700 ring-1 ring-rosea-200 hover:bg-rosea-50"
+          >
+            Registrar llegada
+          </button>
+        </div>
       </header>
 
+      {llegadaAbierta && (
+        <LlegadaForm
+          productos={productos}
+          // Precarga lo que se eligio pedir: lo normal es que llegue eso.
+          inicial={aPedir.map((f) => ({ producto_id: f.producto.id, unidades: f.cantidad }))}
+          onClose={() => setLlegadaAbierta(false)}
+          onSaved={(texto) => {
+            setLlegadaAbierta(false);
+            setAviso(texto);
+            setCantidades({});
+            cargar();
+          }}
+        />
+      )}
+
       <main className="mx-auto max-w-3xl px-4 py-8">
+        {aviso && (
+          <p
+            role="status"
+            className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
+          >
+            {aviso}
+          </p>
+        )}
         {cargando ? (
           <p className="text-center text-neutral-400">Cargando…</p>
         ) : filas.length === 0 ? (

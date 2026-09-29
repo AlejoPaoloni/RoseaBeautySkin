@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   agendadas,
+  aplicarLlegada,
   agruparPorDia,
   checklistPorDefecto,
   clientasInactivas,
@@ -463,5 +464,54 @@ describe("clientasInactivas", () => {
     const r = clientasInactivas([ana, bea, caro, nunca], ventas, "2026-09-28");
     expect(r.map((x) => x.clienta.id)).toEqual(["caro", "ana"]);
     expect(r[0]).toMatchObject({ ultimaCompra: "2026-06-01", compras: 2 });
+  });
+});
+
+describe("aplicarLlegada", () => {
+  it("suma unidades, pisa el costo y vuelve Disponible lo que estaba Sin stock", () => {
+    const agotado = producto({ estado: "Sin stock", stock: 0, costo: 5000 });
+    const conStock = producto({ estado: "Disponible", stock: 2, costo: 5000 });
+    const r = aplicarLlegada(
+      [agotado, conStock],
+      [
+        { producto_id: agotado.id, unidades: 3, costo: 6000 },
+        { producto_id: conStock.id, unidades: 1, costo: 5500 },
+      ]
+    );
+    expect(r.cambios).toEqual([
+      { id: agotado.id, stock: 3, costo: 6000, estado: "Disponible" },
+      { id: conStock.id, stock: 3, costo: 5500, estado: "Disponible" },
+    ]);
+    expect(r.totalMercaderia).toBe(3 * 6000 + 5500);
+  });
+
+  it("un producto sin control de stock empieza a contar desde lo que llego", () => {
+    const p = producto({ estado: "Sin stock", stock: null });
+    expect(aplicarLlegada([p], [{ producto_id: p.id, unidades: 2, costo: 1000 }]).cambios[0]).toMatchObject({
+      stock: 2,
+      estado: "Disponible",
+    });
+  });
+
+  it("Por Encargo sigue Por Encargo aunque llegue stock", () => {
+    const p = producto({ estado: "Por Encargo", stock: null });
+    expect(aplicarLlegada([p], [{ producto_id: p.id, unidades: 1, costo: 1000 }]).cambios[0].estado).toBe(
+      "Por Encargo"
+    );
+  });
+
+  it("junta renglones del mismo producto e ignora los que quedaron en 0", () => {
+    const p = producto({ stock: 1, costo: 1000 });
+    const otro = producto({ stock: 1 });
+    const r = aplicarLlegada(
+      [p, otro],
+      [
+        { producto_id: p.id, unidades: 1, costo: 1000 },
+        { producto_id: p.id, unidades: 2, costo: 1200 },
+        { producto_id: otro.id, unidades: 0, costo: 999 },
+      ]
+    );
+    expect(r.cambios).toEqual([{ id: p.id, stock: 4, costo: 1200, estado: "Disponible" }]);
+    expect(r.totalMercaderia).toBe(1000 + 2400);
   });
 });

@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/client";
 import { estadoSegunStock } from "@/lib/gestion";
 import type {
+  CategoriaGasto,
   Clienta,
+  Estado,
   Pedido,
   PedidoItem,
   Producto,
@@ -268,4 +270,29 @@ export function reponerStock(
   productos: Producto[]
 ): Promise<void> {
   return moverStock(items, productos, 1);
+}
+
+// Llegada de un pedido al proveedor: escribe stock, costo y estado de cada
+// producto (calculados con aplicarLlegada) y carga los gastos. Primero los
+// productos: si fallan no se carga el gasto. El stock se escribe como valor
+// final (calculado sobre el stock de antes), no como "sumar N": reintentar
+// despues de un error no lo suma dos veces.
+export async function registrarLlegada(
+  cambios: { id: string; stock: number; costo: number; estado: Estado }[],
+  gastos: { fecha: string; categoria: CategoriaGasto; descripcion: string; monto: number }[]
+): Promise<void> {
+  const supabase = createClient();
+  const resultados = await Promise.all(
+    cambios.map(({ id, ...campos }) =>
+      supabase.from("productos").update(campos).eq("id", id)
+    )
+  );
+  const fallo = resultados.find((r) => r.error);
+  if (fallo?.error) throw fallo.error;
+
+  const aCargar = gastos.filter((g) => g.monto > 0);
+  if (aCargar.length > 0) {
+    const { error } = await supabase.from("gastos").insert(aCargar);
+    if (error) throw error;
+  }
 }

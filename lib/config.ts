@@ -5,6 +5,8 @@ export const config = {
   instagramUsuario: "roseabeautyskin",
   mensajeConsulta: "Hola, tengo una consulta",
   email: "roseabeautyskin@gmail.com",
+  // Alias para transferir: va en el mensaje de "Por cobrar" a la clienta.
+  aliasTransferencia: "ROSEABEAUTY.SKIN",
   notaPorEncargo:
     "Encargá tus favoritos con un 50% de seña. Llegan con nuestro próximo pedido.",
 };

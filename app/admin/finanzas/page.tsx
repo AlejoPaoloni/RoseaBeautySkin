@@ -16,6 +16,7 @@ import {
   formatearFecha,
   gastosPorCategoria,
   mesActual,
+  mensajeVentaClienta,
   mesAnterior,
   metricasClientasMes,
   nombreMes,
@@ -28,6 +29,7 @@ import {
   unidadesVenta,
 } from "@/lib/finanzas";
 import { formatearPrecio } from "@/lib/catalog";
+import { config } from "@/lib/config";
 import { valorStock } from "@/lib/gestion";
 import IndicadoresCards from "@/components/admin/finanzas/IndicadoresCards";
 import ResumenCards from "@/components/admin/finanzas/ResumenCards";
@@ -50,6 +52,8 @@ export default function FinanzasPage() {
   const [cargando, setCargando] = useState(true);
   const [ventaAbierta, setVentaAbierta] = useState(false);
   const [ventaEditando, setVentaEditando] = useState<Venta | null>(null);
+  // Id de la venta cuyo mensaje se acaba de copiar (feedback del boton).
+  const [copiada, setCopiada] = useState<string | null>(null);
   const [gastoAbierto, setGastoAbierto] = useState(false);
   const [gastoEditando, setGastoEditando] = useState<Gasto | null>(null);
 
@@ -116,6 +120,22 @@ export default function FinanzasPage() {
     } catch {
       setVentas(previo);
       alert("No se pudo eliminar la venta. Probá de nuevo.");
+    }
+  }
+
+  async function copiarMensaje(v: Venta) {
+    // Sin ficha ni nombre suelto no hay a quien saludar por nombre.
+    // (ni si la ficha se borro: nombreClienta devuelve "Sin nombre").
+    const encontrado = nombreClienta(v);
+    const nombre = encontrado === "Sin nombre" ? null : encontrado;
+    try {
+      await navigator.clipboard.writeText(
+        mensajeVentaClienta(v, nombre, config.aliasTransferencia)
+      );
+      setCopiada(v.id);
+      setTimeout(() => setCopiada((c) => (c === v.id ? null : c)), 2500);
+    } catch {
+      alert("No se pudo copiar. Probá de nuevo.");
     }
   }
 
@@ -219,6 +239,12 @@ export default function FinanzasPage() {
                       <span className="shrink-0 tabular-nums">
                         {formatearPrecio(totalVenta(v))}
                       </span>
+                      <button
+                        onClick={() => copiarMensaje(v)}
+                        className="shrink-0 rounded-full bg-white px-3 py-1 text-xs text-amber-900 ring-1 ring-amber-300 hover:bg-amber-100"
+                      >
+                        {copiada === v.id ? "¡Copiado!" : "Copiar mensaje"}
+                      </button>
                       <button
                         onClick={() => cambiarCobrada(v, true)}
                         className="shrink-0 rounded-full bg-white px-3 py-1 text-xs text-amber-900 ring-1 ring-amber-300 hover:bg-amber-100"
@@ -353,6 +379,13 @@ export default function FinanzasPage() {
                     <span className="shrink-0 text-sm text-neutral-800 tabular-nums">
                       {formatearPrecio(totalVenta(v))}
                     </span>
+                    <button
+                      onClick={() => copiarMensaje(v)}
+                      aria-label={`Copiar mensaje para la clienta de la venta del ${formatearFecha(v.fecha)}`}
+                      className="shrink-0 rounded-full px-3 py-1 text-xs text-neutral-500 ring-1 ring-neutral-200 hover:bg-neutral-50"
+                    >
+                      {copiada === v.id ? "¡Copiado!" : "Mensaje"}
+                    </button>
                     <button
                       onClick={() => {
                         setVentaEditando(v);

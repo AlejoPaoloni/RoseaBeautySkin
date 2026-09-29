@@ -7,6 +7,7 @@ import {
   mesAnterior,
   mesCorto,
   mesDe,
+  mensajeVentaClienta,
   metricasClientasMes,
   pendientesDeCobro,
   nombreMes,
@@ -337,5 +338,29 @@ describe("metricasClientasMes", () => {
 
   it("sin ventas en el mes no divide por cero", () => {
     expect(metricasClientasMes([], "2026-09").ticketPromedio).toBe(0);
+  });
+});
+
+describe("mensajeVentaClienta", () => {
+  const v = venta({
+    items: [
+      item({ nombre: "Pocket Blush", cantidad: 2, precio_unitario: 30000 }),
+      item({ nombre: "Lip Tint", cantidad: 1, precio_unitario: 25000 }),
+    ],
+  });
+
+  it("lista el detalle y el total, con el nombre de la clienta", () => {
+    const m = mensajeVentaClienta({ ...v, cobrada: true }, "Ana", "MI.ALIAS");
+    expect(m).toContain("Hola Ana");
+    expect(m).toMatch(/2 × Pocket Blush/);
+    expect(m).toMatch(/Total: \$\s?85\.000/);
+    expect(m).not.toContain("MI.ALIAS");
+  });
+
+  it("si esta por cobrar, dice cuanto falta y pasa el alias", () => {
+    const m = mensajeVentaClienta({ ...v, cobrada: false }, null, "MI.ALIAS");
+    expect(m).toMatch(/^Hola!/);
+    expect(m).toContain("MI.ALIAS");
+    expect(m).toMatch(/pendiente/i);
   });
 });

@@ -140,6 +140,51 @@ export function valorStock(productos: Producto[]): ValorStock {
   return v;
 }
 
+// --- Llegada de un pedido al proveedor ---
+
+export interface LineaLlegada {
+  producto_id: string;
+  unidades: number;
+  // Costo unitario de ESTE pedido: pasa a ser el costo del producto.
+  costo: number;
+}
+
+export interface ResultadoLlegada {
+  cambios: { id: string; stock: number; costo: number; estado: Estado }[];
+  totalMercaderia: number;
+}
+
+// Lo que hay que escribir en cada producto cuando llega la mercaderia: suma
+// unidades (un producto sin control de stock empieza a contar desde lo que
+// llego), pisa el costo con el del pedido y ajusta el estado con la misma
+// regla que una venta (Sin stock con unidades vuelve a Disponible; Por
+// Encargo no se toca).
+export function aplicarLlegada(
+  productos: Producto[],
+  lineas: LineaLlegada[]
+): ResultadoLlegada {
+  const porProducto = new Map<string, { unidades: number; costo: number }>();
+  let totalMercaderia = 0;
+  for (const l of lineas) {
+    if (l.unidades <= 0) continue;
+    const previa = porProducto.get(l.producto_id);
+    porProducto.set(l.producto_id, {
+      unidades: (previa?.unidades ?? 0) + l.unidades,
+      costo: l.costo,
+    });
+    totalMercaderia += l.unidades * l.costo;
+  }
+
+  const cambios: ResultadoLlegada["cambios"] = [];
+  for (const [id, { unidades, costo }] of porProducto) {
+    const p = productos.find((x) => x.id === id);
+    if (!p) continue;
+    const stock = (p.stock ?? 0) + unidades;
+    cambios.push({ id, stock, costo, estado: estadoSegunStock(p.estado, stock) });
+  }
+  return { cambios, totalMercaderia };
+}
+
 // --- Clientas para volver a escribirles ---
 
 export const DIAS_INACTIVA = 60;

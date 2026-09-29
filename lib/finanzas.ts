@@ -152,6 +152,46 @@ export function resumenMes(
   };
 }
 
+// Mensaje para mandarle a la clienta por WhatsApp con el detalle de su
+// compra. Si la debe, suma cuanto falta y el alias para transferir.
+export function mensajeVentaClienta(
+  venta: Venta,
+  nombre: string | null,
+  alias: string
+): string {
+  const lineas = venta.items.map(
+    (i) =>
+      `- ${i.cantidad} × ${i.nombre}: ${formatearPrecioAr(i.precio_unitario * i.cantidad)}`
+  );
+  const total = totalVenta(venta);
+  const partes = [
+    `Hola${nombre ? ` ${nombre}` : ""}! Te paso el detalle de tu compra en Rosea Beauty:`,
+    "",
+    ...lineas,
+    "",
+    `Total: ${formatearPrecioAr(total)}`,
+  ];
+  if (!venta.cobrada) {
+    partes.push(
+      "",
+      `Queda pendiente ${formatearPrecioAr(total)}. Podés transferir al alias ${alias} y mandarnos el comprobante.`
+    );
+  } else {
+    partes.push("", "¡Gracias por tu compra! 💕");
+  }
+  return partes.join("\n");
+}
+
+// Mismo formato que formatearPrecio de lib/catalog (no se importa para no
+// atar finanzas al catalogo publico).
+function formatearPrecioAr(monto: number): string {
+  return monto.toLocaleString("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    maximumFractionDigits: 0,
+  });
+}
+
 // Todas las ventas adeudadas, de cualquier mes: la mas vieja primero, que es
 // la que mas urge reclamar.
 export function pendientesDeCobro(ventas: Venta[]): Venta[] {
