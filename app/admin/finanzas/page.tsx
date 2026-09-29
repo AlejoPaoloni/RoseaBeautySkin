@@ -17,10 +17,13 @@ import {
   gastosPorCategoria,
   mesActual,
   mensajeVentaClienta,
+  fechaHoy,
   mesAnterior,
   metricasClientasMes,
   nombreMes,
   pendientesDeCobro,
+  proyeccionMes,
+  puntoEquilibrio,
   resumenMes,
   serieMensual,
   topProductos,
@@ -32,6 +35,9 @@ import { formatearPrecio } from "@/lib/catalog";
 import { config } from "@/lib/config";
 import { valorStock } from "@/lib/gestion";
 import IndicadoresCards from "@/components/admin/finanzas/IndicadoresCards";
+import DesgloseVentas from "@/components/admin/finanzas/DesgloseVentas";
+import PuntoEquilibrioCard from "@/components/admin/finanzas/PuntoEquilibrioCard";
+import Link from "next/link";
 import ResumenCards from "@/components/admin/finanzas/ResumenCards";
 import GraficoEvolucion from "@/components/admin/finanzas/GraficoEvolucion";
 import ListaBarras from "@/components/admin/finanzas/ListaBarras";
@@ -185,6 +191,12 @@ export default function FinanzasPage() {
           >
             + Gasto
           </button>
+          <Link
+            href={`/admin/finanzas/cierre?mes=${mes}`}
+            className="rounded-full px-4 py-2 text-sm text-rosea-700 ring-1 ring-rosea-200 hover:bg-rosea-50"
+          >
+            Cierre del mes
+          </Link>
         </div>
       </header>
 
@@ -211,7 +223,11 @@ export default function FinanzasPage() {
               </select>
             </div>
 
-            <ResumenCards actual={actual} anterior={anterior} />
+            <ResumenCards
+              actual={actual}
+              anterior={anterior}
+              proyeccion={proyeccionMes(ventas, mes, fechaHoy())}
+            />
 
             <div className="mt-3">
               <IndicadoresCards
@@ -338,6 +354,18 @@ export default function FinanzasPage() {
                     monto: f.monto,
                     detalle: `${Math.round(f.pct)}%`,
                   }))}
+                />
+              </section>
+            </div>
+
+            <div className="mt-6 grid gap-6 lg:grid-cols-2">
+              <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+                <DesgloseVentas ventas={ventas} productos={productos} mes={mes} />
+              </section>
+              <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+                <PuntoEquilibrioCard
+                  pe={puntoEquilibrio(ventas, gastos, mes)}
+                  vendidoMes={actual.ingresos}
                 />
               </section>
             </div>

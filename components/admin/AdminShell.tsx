@@ -109,9 +109,9 @@ export default function AdminShell({
   const hayActivaEnMenu = secundarias.some((s) => esActiva(s.href));
 
   return (
-    <div className="md:pl-56">
+    <div className="md:pl-56 print:pl-0">
       {/* Escritorio: panel lateral fijo. */}
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-56 flex-col border-r border-rosea-100 bg-white md:flex">
+      <aside className="fixed inset-y-0 left-0 z-20 hidden w-56 flex-col border-r border-rosea-100 bg-white md:flex print:hidden">
         <div className="flex items-center gap-3 px-5 py-4">
           <Image src="/brand/monogram.svg" alt="RB" width={40} height={30} />
           <span className="font-serif text-lg text-neutral-800">Panel</span>
@@ -156,7 +156,7 @@ export default function AdminShell({
 
       {/* Mobile: barra abajo. Se carga desde el celular con una mano, los
           destinos tienen que caer donde llega el pulgar. */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-rosea-100 bg-white md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-rosea-100 bg-white md:hidden print:hidden">
         {principales.map(({ href, etiqueta, icono: Icono }) => (
           <Link
             key={href}
@@ -224,7 +224,7 @@ export default function AdminShell({
       )}
 
       {/* Espacio para que la barra de abajo no tape la última fila. */}
-      <div className="pb-16 md:pb-0">{children}</div>
+      <div className="pb-16 md:pb-0 print:pb-0">{children}</div>
     </div>
   );
 }

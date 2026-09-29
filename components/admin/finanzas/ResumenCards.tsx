@@ -6,6 +6,8 @@ import { variacion, type ResumenMes } from "@/lib/finanzas";
 interface Props {
   actual: ResumenMes;
   anterior: ResumenMes;
+  // Cierre estimado del mes en curso (null en meses cerrados).
+  proyeccion?: number | null;
 }
 
 function Variacion({ actual, anterior }: { actual: number; anterior: number }) {
@@ -58,7 +60,7 @@ function Card({
   );
 }
 
-export default function ResumenCards({ actual, anterior }: Props) {
+export default function ResumenCards({ actual, anterior, proyeccion = null }: Props) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <Card
@@ -66,7 +68,14 @@ export default function ResumenCards({ actual, anterior }: Props) {
         monto={actual.ingresos}
         destacada
         pie={
-          <Variacion actual={actual.ingresos} anterior={anterior.ingresos} />
+          <>
+            <Variacion actual={actual.ingresos} anterior={anterior.ingresos} />
+            {proyeccion !== null && (
+              <span className="mt-0.5 block text-xs text-rosea-700">
+                Al ritmo actual cerrás en {formatearPrecio(proyeccion)}
+              </span>
+            )}
+          </>
         }
       />
       <Card

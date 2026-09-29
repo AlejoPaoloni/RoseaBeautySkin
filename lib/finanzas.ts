@@ -1,4 +1,4 @@
-import type { CategoriaGasto, Gasto, MedioPago, Venta } from "./types";
+import type { CategoriaGasto, Gasto, MedioPago, Producto, Venta } from "./types";
 import { CATEGORIAS_GASTO } from "./types";
 
 // Las fechas de ventas y gastos son columnas `date` de Postgres: llegan como
@@ -149,6 +149,107 @@ export function resumenMes(
     cobradoPorMedio,
     gananciaMargen,
     margenPct: ingresos === 0 ? null : (gananciaMargen / ingresos) * 100,
+  };
+}
+
+// --- De donde viene la plata ---
+
+export type Dimension = "canal" | "marca" | "categoria";
+
+export interface FilaDimension {
+  clave: string;
+  ingresos: number;
+  ganancia: number;
+  unidades: number;
+}
+
+// Ventas agrupadas por canal, marca o categoria. Marca y categoria salen del
+// producto actual del renglon (el snapshot de la venta no las guarda); un
+// renglon cuyo producto se borro va a "Sin producto". En Maquillajes la
+// categoria es la subcategoria (Rostro, Ojos, Labios), que es lo que
+// distingue; Skincare tiene una sola.
+export function ventasPorDimension(
+  ventas: Venta[],
+  productos: Producto[],
+  meses: string[] | null,
+  dimension: Dimension
+): FilaDimension[] {
+  const porId = new Map(productos.map((p) => [p.id, p]));
+  const acumulado = new Map<string, FilaDimension>();
+  for (const v of ventas) {
+    if (meses && !meses.includes(mesDe(v.fecha))) continue;
+    for (const i of v.items) {
+      const p = i.producto_id ? porId.get(i.producto_id) : undefined;
+      const clave =
+        dimension === "canal"
+          ? v.canal
+          : !p
+            ? "Sin producto"
+            : dimension === "marca"
+              ? (p.marca ?? "Sin marca")
+              : p.subcategoria;
+      const fila = acumulado.get(clave) ?? { clave, ingresos: 0, ganancia: 0, unidades: 0 };
+      fila.ingresos += i.precio_unitario * i.cantidad;
+      fila.ganancia += (i.precio_unitario - i.costo_unitario) * i.cantidad;
+      fila.unidades += i.cantidad;
+      acumulado.set(clave, fila);
+    }
+  }
+  return [...acumulado.values()].sort((a, b) => b.ingresos - a.ingresos);
+}
+
+// --- Proyeccion y punto de equilibrio ---
+
+function diasDelMes(mes: string): number {
+  const [anio, m] = mes.split("-").map(Number);
+  return new Date(Date.UTC(anio, m, 0)).getUTCDate();
+}
+
+// "Al ritmo actual cerras el mes en...": solo para el mes en curso y desde
+// el dia 3 (con uno o dos dias la extrapolacion no dice nada).
+export function proyeccionMes(ventas: Venta[], mes: string, hoy: string): number | null {
+  if (mesDe(hoy) !== mes) return null;
+  const dia = Number(hoy.slice(8, 10));
+  if (dia < 3) return null;
+  const vendido = ventas
+    .filter((v) => mesDe(v.fecha) === mes && v.fecha <= hoy)
+    .reduce((t, v) => t + totalVenta(v), 0);
+  return Math.round((vendido / dia) * diasDelMes(mes));
+}
+
+export interface PuntoEquilibrio {
+  // Gastos que no son mercaderia, promedio de los ultimos 3 meses.
+  gastosFijosPromedio: number;
+  // Lo que queda de cada peso vendido despues de pagar la mercaderia (12 meses).
+  margenBrutoPct: number;
+  // Ventas por mes para cubrir esos gastos: ni ganar ni perder.
+  ventasNecesarias: number;
+}
+
+// Mercaderia no entra en los gastos fijos: ese costo ya esta descontado en
+// el margen bruto. Se promedian 3 meses para que un mes de mucha
+// publicidad no mueva todo, y el margen se toma de 12 para que sea estable.
+export function puntoEquilibrio(
+  ventas: Venta[],
+  gastos: Gasto[],
+  mes: string
+): PuntoEquilibrio | null {
+  const tres = ultimosMeses(3, mes);
+  const doce = ultimosMeses(12, mes);
+  const gastosFijos = gastos
+    .filter((g) => g.categoria !== "Mercaderia" && tres.includes(mesDe(g.fecha)))
+    .reduce((t, g) => t + g.monto, 0);
+  const periodo = ventas.filter((v) => doce.includes(mesDe(v.fecha)));
+  const ingresos = periodo.reduce((t, v) => t + totalVenta(v), 0);
+  if (ingresos === 0) return null;
+  const costo = periodo.reduce((t, v) => t + costoVenta(v), 0);
+  const margen = (ingresos - costo) / ingresos;
+  if (margen <= 0) return null;
+  const gastosFijosPromedio = Math.round(gastosFijos / tres.length);
+  return {
+    gastosFijosPromedio,
+    margenBrutoPct: Math.round(margen * 100),
+    ventasNecesarias: Math.round(gastosFijosPromedio / margen),
   };
 }
 

@@ -7,6 +7,9 @@ import {
   mesAnterior,
   mesCorto,
   mesDe,
+  proyeccionMes,
+  puntoEquilibrio,
+  ventasPorDimension,
   mensajeVentaClienta,
   metricasClientasMes,
   pendientesDeCobro,
@@ -18,7 +21,7 @@ import {
   ultimosMeses,
   variacion,
 } from "@/lib/finanzas";
-import type { Gasto, Venta, VentaItem } from "@/lib/types";
+import type { Gasto, Producto, Venta, VentaItem } from "@/lib/types";
 
 let n = 0;
 
@@ -362,5 +365,108 @@ describe("mensajeVentaClienta", () => {
     expect(m).toMatch(/^Hola!/);
     expect(m).toContain("MI.ALIAS");
     expect(m).toMatch(/pendiente/i);
+  });
+});
+
+function prod(over: Partial<Producto>): Producto {
+  return {
+    id: "x", slug: null, nombre: "X", marca: null, descripcion_corta: null,
+    imagen_url: null, descripcion_larga: null, imagenes_extra: null,
+    categoria: "Maquillajes", subcategoria: "Labios", estado: "Disponible",
+    precio: 1000, costo: null, stock: null, stock_minimo: 1, destacado: false,
+    tonos: null, orden_display: 0, created_at: "2026-01-01T00:00:00Z",
+    ...over,
+  };
+}
+
+describe("ventasPorDimension", () => {
+  const productos = [
+    prod({ id: "rhode", marca: "rhode", categoria: "Maquillajes", subcategoria: "Rostro" }),
+    prod({ id: "elf", marca: "e.l.f.", categoria: "Skincare", subcategoria: "Skincare" }),
+  ];
+  const ventas = [
+    venta({
+      fecha: "2026-09-02",
+      canal: "Instagram",
+      items: [
+        item({ producto_id: "rhode", cantidad: 1, precio_unitario: 30000, costo_unitario: 20000 }),
+        item({ producto_id: "elf", cantidad: 2, precio_unitario: 10000, costo_unitario: 4000 }),
+      ],
+    }),
+    venta({
+      fecha: "2026-09-10",
+      canal: "WhatsApp",
+      items: [item({ producto_id: null, nombre: "Borrado", precio_unitario: 5000, costo_unitario: 1000 })],
+    }),
+    venta({ fecha: "2026-08-01", canal: "Presencial", items: [item({ producto_id: "rhode" })] }),
+  ];
+
+  it("por canal suma cada venta en su canal", () => {
+    const r = ventasPorDimension(ventas, productos, ["2026-09"], "canal");
+    expect(r.map((f) => [f.clave, f.ingresos])).toEqual([
+      ["Instagram", 50000],
+      ["WhatsApp", 5000],
+    ]);
+  });
+
+  it("por marca calcula ganancia y deja aparte lo que no tiene producto", () => {
+    const r = ventasPorDimension(ventas, productos, ["2026-09"], "marca");
+    expect(r).toEqual([
+      { clave: "rhode", ingresos: 30000, ganancia: 10000, unidades: 1 },
+      { clave: "e.l.f.", ingresos: 20000, ganancia: 12000, unidades: 2 },
+      { clave: "Sin producto", ingresos: 5000, ganancia: 4000, unidades: 1 },
+    ]);
+  });
+
+  it("por categoria usa la subcategoria de maquillaje", () => {
+    const r = ventasPorDimension(ventas, productos, ["2026-09"], "categoria");
+    expect(r.map((f) => f.clave)).toEqual(["Rostro", "Skincare", "Sin producto"]);
+  });
+
+  it("null = todos los meses", () => {
+    const r = ventasPorDimension(ventas, productos, null, "canal");
+    expect(r.map((f) => f.clave)).toContain("Presencial");
+  });
+});
+
+describe("proyeccionMes", () => {
+  const ventas = [
+    venta({ fecha: "2026-09-02", items: [item({ precio_unitario: 30000 })] }),
+    venta({ fecha: "2026-09-09", items: [item({ precio_unitario: 30000 })] }),
+  ];
+
+  it("extrapola lo vendido al ritmo de los dias que pasaron", () => {
+    // 60000 en 10 dias de 30 -> 180000
+    expect(proyeccionMes(ventas, "2026-09", "2026-09-10")).toBe(180000);
+  });
+
+  it("no proyecta un mes cerrado, uno futuro ni los primeros 2 dias", () => {
+    expect(proyeccionMes(ventas, "2026-08", "2026-09-10")).toBeNull();
+    expect(proyeccionMes(ventas, "2026-10", "2026-09-10")).toBeNull();
+    expect(proyeccionMes(ventas, "2026-09", "2026-09-02")).toBeNull();
+  });
+});
+
+describe("puntoEquilibrio", () => {
+  it("gastos operativos promedio dividido el margen bruto", () => {
+    const ventas = [
+      // margen bruto 40%: vende 100000, costo 60000
+      venta({ fecha: "2026-09-05", items: [item({ precio_unitario: 100000, costo_unitario: 60000 })] }),
+    ];
+    const gastos = [
+      gasto({ fecha: "2026-09-01", categoria: "Publicidad", monto: 30000 }),
+      gasto({ fecha: "2026-08-01", categoria: "Packaging", monto: 6000 }),
+      gasto({ fecha: "2026-07-01", categoria: "Envios", monto: 0 }),
+      // Mercaderia no es gasto fijo: ya esta en el costo de lo vendido.
+      gasto({ fecha: "2026-09-02", categoria: "Mercaderia", monto: 999999 }),
+    ];
+    const r = puntoEquilibrio(ventas, gastos, "2026-09")!;
+    expect(r.gastosFijosPromedio).toBe(12000); // (30000 + 6000 + 0) / 3
+    expect(r.margenBrutoPct).toBe(40);
+    expect(r.ventasNecesarias).toBe(30000); // 12000 / 0.4
+  });
+
+  it("sin ventas no hay margen con que calcular", () => {
+    expect(puntoEquilibrio([], [], "2026-09")).toBeNull();
   });
 });
