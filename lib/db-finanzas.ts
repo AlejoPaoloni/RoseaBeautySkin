@@ -75,6 +75,52 @@ export async function crearVenta(
   return data.id as string;
 }
 
+// Tampoco hay transacciones aca, asi que el orden esta pensado para que un
+// error a mitad de camino deje la venta consistente y reintentar no duplique
+// nada: 1) cabecera (repetirla no cambia nada), 2) renglones nuevos, 3) se
+// borran los viejos. Si el paso 3 falla se deshace el 2, y la venta queda
+// con sus renglones de antes.
+export async function actualizarVenta(
+  id: string,
+  venta: VentaNueva,
+  itemsViejos: VentaItem[],
+  items: ItemNuevo[]
+): Promise<void> {
+  if (items.length === 0) throw new Error("La venta necesita al menos un item");
+  const supabase = createClient();
+
+  const { error } = await supabase.from("ventas").update(venta).eq("id", id);
+  if (error) throw error;
+
+  const { data: nuevos, error: errorNuevos } = await supabase
+    .from("venta_items")
+    .insert(items.map((i) => ({ ...i, venta_id: id })))
+    .select("id");
+  if (errorNuevos) throw errorNuevos;
+
+  if (itemsViejos.length > 0) {
+    const { error: errorViejos } = await supabase
+      .from("venta_items")
+      .delete()
+      .in("id", itemsViejos.map((i) => i.id));
+    if (errorViejos) {
+      await supabase
+        .from("venta_items")
+        .delete()
+        .in("id", (nuevos ?? []).map((n) => n.id as string));
+      throw errorViejos;
+    }
+  }
+}
+
+export async function marcarCobrada(id: string, cobrada: boolean): Promise<void> {
+  const { error } = await createClient()
+    .from("ventas")
+    .update({ cobrada })
+    .eq("id", id);
+  if (error) throw error;
+}
+
 export async function eliminarVenta(id: string): Promise<void> {
   // venta_items tiene on delete cascade, se van solos.
   const { error } = await createClient().from("ventas").delete().eq("id", id);

@@ -7,6 +7,8 @@ import {
   mesAnterior,
   mesCorto,
   mesDe,
+  metricasClientasMes,
+  pendientesDeCobro,
   nombreMes,
   resumenMes,
   serieMensual,
@@ -41,6 +43,8 @@ function venta(over: Partial<Venta> = {}): Venta {
     cliente: null,
     cliente_id: null,
     canal: "Instagram",
+    medio_pago: "Transferencia",
+    cobrada: true,
     nota: null,
     created_at: "2026-09-10T12:00:00Z",
     items: [item()],
@@ -260,5 +264,78 @@ describe("gastosPorCategoria", () => {
 
   it("no rompe cuando no hay gastos", () => {
     expect(gastosPorCategoria([], "2026-09")).toEqual([]);
+  });
+});
+
+describe("cobro de ventas", () => {
+  const cobradaTransf = venta({
+    fecha: "2026-09-05",
+    medio_pago: "Transferencia",
+    items: [item({ precio_unitario: 10000 })],
+  });
+  const cobradaEfvo = venta({
+    fecha: "2026-09-06",
+    medio_pago: "Efectivo",
+    items: [item({ precio_unitario: 4000 })],
+  });
+  const pendiente = venta({
+    fecha: "2026-09-07",
+    cobrada: false,
+    items: [item({ precio_unitario: 7000 })],
+  });
+  const vieja = venta({
+    fecha: "2026-09-08",
+    medio_pago: null,
+    items: [item({ precio_unitario: 1000 })],
+  });
+  const ventas = [cobradaTransf, cobradaEfvo, pendiente, vieja];
+
+  it("la caja cuenta solo lo cobrado; las ventas siguen contando todo", () => {
+    const r = resumenMes(ventas, [], "2026-09");
+    expect(r.ingresos).toBe(22000);
+    expect(r.resultadoCaja).toBe(15000);
+    expect(r.pendienteCobro).toBe(7000);
+  });
+
+  it("separa lo cobrado por medio de pago, con las viejas aparte", () => {
+    const r = resumenMes(ventas, [], "2026-09");
+    expect(r.cobradoPorMedio).toEqual({
+      Transferencia: 10000,
+      Efectivo: 4000,
+      "Sin dato": 1000,
+    });
+  });
+
+  it("pendientesDeCobro lista todas las adeudadas, la mas vieja primero", () => {
+    const otra = venta({ fecha: "2026-08-01", cobrada: false });
+    expect(pendientesDeCobro([...ventas, otra]).map((v) => v.id)).toEqual([
+      otra.id,
+      pendiente.id,
+    ]);
+  });
+});
+
+describe("metricasClientasMes", () => {
+  it("ticket promedio, clientas nuevas y las que volvieron", () => {
+    const ventas = [
+      venta({ fecha: "2026-08-10", cliente_id: "ana", items: [item({ precio_unitario: 5000 })] }),
+      venta({ fecha: "2026-09-02", cliente_id: "ana", items: [item({ precio_unitario: 10000 })] }),
+      venta({ fecha: "2026-09-03", cliente_id: "bea", items: [item({ precio_unitario: 20000 })] }),
+      // Bea compra dos veces en el mes: sigue siendo UNA clienta nueva.
+      venta({ fecha: "2026-09-20", cliente_id: "bea", items: [item({ precio_unitario: 6000 })] }),
+      // Nombre suelto (ventas viejas): cuenta por nombre, sin mayusculas.
+      venta({ fecha: "2026-07-01", cliente: "Caro", items: [item()] }),
+      venta({ fecha: "2026-09-04", cliente: " caro ", items: [item({ precio_unitario: 4000 })] }),
+      // Sin clienta: suma al ticket pero no a nuevas/volvieron.
+      venta({ fecha: "2026-09-05", items: [item({ precio_unitario: 5000 })] }),
+    ];
+    const m = metricasClientasMes(ventas, "2026-09");
+    expect(m.ticketPromedio).toBe(9000); // 45000 / 5 ventas
+    expect(m.nuevas).toBe(1); // bea
+    expect(m.volvieron).toBe(2); // ana, caro
+  });
+
+  it("sin ventas en el mes no divide por cero", () => {
+    expect(metricasClientasMes([], "2026-09").ticketPromedio).toBe(0);
   });
 });

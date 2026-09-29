@@ -9,8 +9,13 @@ import {
   listarClientas,
 } from "@/lib/db-gestion";
 import { listarVentas } from "@/lib/db-finanzas";
-import { coincide, historialClienta } from "@/lib/gestion";
-import { formatearFecha } from "@/lib/finanzas";
+import {
+  clientasInactivas,
+  coincide,
+  DIAS_INACTIVA,
+  historialClienta,
+} from "@/lib/gestion";
+import { fechaHoy, formatearFecha } from "@/lib/finanzas";
 import { formatearPrecio } from "@/lib/catalog";
 import BuscadorAdmin from "@/components/admin/BuscadorAdmin";
 
@@ -54,6 +59,8 @@ export default function ClientasPage() {
     }
   }
 
+  const inactivas = clientasInactivas(clientas, ventas, fechaHoy());
+
   const clientasFiltradas = clientas.filter((c) =>
     coincide(busqueda, [c.nombre, c.contacto, c.nota])
   );
@@ -81,6 +88,34 @@ export default function ClientasPage() {
             placeholder="Buscar por nombre, contacto o nota…"
           />
         </div>
+
+        {!cargando && inactivas.length > 0 && busqueda === "" && (
+          <section className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <h2 className="text-sm font-medium text-amber-900">
+              Hace más de {DIAS_INACTIVA} días que no te compran (
+              {inactivas.length})
+            </h2>
+            <p className="mt-1 text-xs text-amber-800">
+              Buen momento para escribirles con una novedad o algo que vuelva a
+              entrar.
+            </p>
+            <ul className="mt-2 space-y-1">
+              {inactivas.map((x) => (
+                <li
+                  key={x.clienta.id}
+                  className="flex flex-wrap items-baseline gap-x-2 text-sm text-amber-900"
+                >
+                  <span className="font-medium">{x.clienta.nombre}</span>
+                  <span className="text-xs text-amber-800">
+                    última compra {formatearFecha(x.ultimaCompra)} ·{" "}
+                    {x.compras} compra{x.compras === 1 ? "" : "s"}
+                    {x.clienta.contacto && ` · ${x.clienta.contacto}`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {cargando ? (
           <p className="text-center text-neutral-400">Cargando…</p>

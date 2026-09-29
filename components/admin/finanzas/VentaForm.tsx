@@ -1,14 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import type { Canal, Clienta, Producto } from "@/lib/types";
-import { CANALES } from "@/lib/types";
-import { crearVenta, type ItemNuevo } from "@/lib/db-finanzas";
+import type { Canal, Clienta, MedioPago, Producto, Venta } from "@/lib/types";
+import { CANALES, MEDIOS_PAGO } from "@/lib/types";
+import {
+  actualizarVenta,
+  crearVenta,
+  type ItemNuevo,
+} from "@/lib/db-finanzas";
 import { descontarStock } from "@/lib/db-gestion";
+import { diferenciaStock } from "@/lib/gestion";
 import { fechaHoy } from "@/lib/finanzas";
 import { formatearPrecio } from "@/lib/catalog";
 
 interface Props {
+  // Con venta: modo edicion. Sin venta: venta nueva.
+  venta?: Venta | null;
   productos: Producto[];
   clientas: Clienta[];
   onClose: () => void;
@@ -36,17 +43,37 @@ function lineaVacia(): Linea {
 }
 
 export default function VentaForm({
+  venta = null,
   productos,
   clientas,
   onClose,
   onSaved,
 }: Props) {
-  const [fecha, setFecha] = useState(fechaHoy());
-  const [cliente, setCliente] = useState("");
-  const [clienteId, setClienteId] = useState("");
-  const [canal, setCanal] = useState<Canal>("Instagram");
-  const [nota, setNota] = useState("");
-  const [lineas, setLineas] = useState<Linea[]>([lineaVacia()]);
+  const [fecha, setFecha] = useState(venta?.fecha ?? fechaHoy());
+  const [cliente, setCliente] = useState(venta?.cliente ?? "");
+  const [clienteId, setClienteId] = useState(venta?.cliente_id ?? "");
+  const [canal, setCanal] = useState<Canal>(venta?.canal ?? "Instagram");
+  // Venta vieja sin dato: se deja vacio para no inventar como se pago.
+  const [medioPago, setMedioPago] = useState<MedioPago | "">(
+    venta ? (venta.medio_pago ?? "") : "Transferencia"
+  );
+  const [cobrada, setCobrada] = useState(venta?.cobrada ?? true);
+  const [nota, setNota] = useState(venta?.nota ?? "");
+  const [lineas, setLineas] = useState<Linea[]>(() =>
+    venta && venta.items.length > 0
+      ? venta.items.map((i) => {
+          contador += 1;
+          return {
+            clave: `l-${contador}`,
+            producto_id: i.producto_id,
+            nombre: i.nombre,
+            cantidad: i.cantidad,
+            precio_unitario: i.precio_unitario,
+            costo_unitario: i.costo_unitario,
+          };
+        })
+      : [lineaVacia()]
+  );
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -98,6 +125,10 @@ export default function VentaForm({
       setError("La cantidad tiene que ser 1 o más");
       return;
     }
+    if (!venta && medioPago === "") {
+      setError("Elegí cómo te pagaron");
+      return;
+    }
     setGuardando(true);
     setError(null);
     try {
@@ -108,19 +139,27 @@ export default function VentaForm({
         precio_unitario: l.precio_unitario,
         costo_unitario: l.costo_unitario,
       }));
-      await crearVenta(
-        {
-          fecha,
-          cliente: clienteId === "" ? cliente.trim() || null : null,
-          cliente_id: clienteId || null,
-          canal,
-          nota: nota.trim() || null,
-        },
-        guardados
-      );
-      // Después de guardar: si el stock fallara, la venta ya quedó registrada
-      // y el número de unidades se corrige a mano desde el producto.
-      await descontarStock(guardados, productos);
+      const cabecera = {
+        fecha,
+        cliente: clienteId === "" ? cliente.trim() || null : null,
+        cliente_id: clienteId || null,
+        canal,
+        medio_pago: medioPago === "" ? null : medioPago,
+        cobrada,
+        nota: nota.trim() || null,
+      };
+      if (venta) {
+        await actualizarVenta(venta.id, cabecera, venta.items, guardados);
+        // Solo la diferencia: si pasó de 1 a 2 unidades se descuenta 1 más;
+        // si se sacó un renglón, esas unidades vuelven.
+        await descontarStock(diferenciaStock(venta.items, guardados), productos);
+      } else {
+        await crearVenta(cabecera, guardados);
+        // Después de guardar: si el stock fallara, la venta ya quedó
+        // registrada y el número de unidades se corrige a mano desde el
+        // producto.
+        await descontarStock(guardados, productos);
+      }
       onSaved();
     } catch {
       setError("No se pudo guardar la venta. Probá de nuevo.");
@@ -134,7 +173,9 @@ export default function VentaForm({
         onSubmit={onSubmit}
         className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl"
       >
-        <h2 className="font-serif text-xl text-rosea-700">Nueva venta</h2>
+        <h2 className="font-serif text-xl text-rosea-700">
+          {venta ? "Editar venta" : "Nueva venta"}
+        </h2>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <label className="block text-sm text-neutral-600">
@@ -266,6 +307,39 @@ export default function VentaForm({
           </p>
         </div>
 
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <label className="block text-sm text-neutral-600">
+            Medio de pago
+            <select
+              value={medioPago}
+              onChange={(e) => setMedioPago(e.target.value as MedioPago | "")}
+              className="mt-1 w-full rounded-lg border border-neutral-200 px-2 py-2 text-sm"
+            >
+              {venta && venta.medio_pago === null && (
+                <option value="">Sin dato</option>
+              )}
+              {MEDIOS_PAGO.map((m) => (
+                <option key={m}>{m}</option>
+              ))}
+            </select>
+          </label>
+          <label className="flex items-center gap-2 self-end pb-2 text-sm text-neutral-600">
+            <input
+              type="checkbox"
+              checked={cobrada}
+              onChange={(e) => setCobrada(e.target.checked)}
+              className="h-4 w-4 accent-rosea-400"
+            />
+            Ya está cobrada
+          </label>
+        </div>
+        {!cobrada && (
+          <p className="mt-1 text-xs text-amber-800">
+            Queda en &quot;Por cobrar&quot; en Finanzas y no suma a la caja
+            hasta que la marques como cobrada.
+          </p>
+        )}
+
         <label className="mt-4 block text-sm text-neutral-600">
           Nota
           <input
@@ -310,7 +384,7 @@ export default function VentaForm({
             disabled={guardando}
             className="rounded-full bg-rosea-400 px-5 py-2 text-sm text-white hover:bg-rosea-500 disabled:opacity-50"
           >
-            {guardando ? "Guardando…" : "Guardar venta"}
+            {guardando ? "Guardando…" : venta ? "Guardar cambios" : "Guardar venta"}
           </button>
         </div>
       </form>

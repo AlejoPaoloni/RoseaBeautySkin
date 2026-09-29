@@ -7,6 +7,7 @@ import {
   eliminarGasto,
   eliminarVenta,
   listarGastos,
+  marcarCobrada,
   listarVentas,
 } from "@/lib/db-finanzas";
 import { listarClientas, reponerStock } from "@/lib/db-gestion";
@@ -16,7 +17,9 @@ import {
   gastosPorCategoria,
   mesActual,
   mesAnterior,
+  metricasClientasMes,
   nombreMes,
+  pendientesDeCobro,
   resumenMes,
   serieMensual,
   topProductos,
@@ -25,6 +28,8 @@ import {
   unidadesVenta,
 } from "@/lib/finanzas";
 import { formatearPrecio } from "@/lib/catalog";
+import { valorStock } from "@/lib/gestion";
+import IndicadoresCards from "@/components/admin/finanzas/IndicadoresCards";
 import ResumenCards from "@/components/admin/finanzas/ResumenCards";
 import GraficoEvolucion from "@/components/admin/finanzas/GraficoEvolucion";
 import ListaBarras from "@/components/admin/finanzas/ListaBarras";
@@ -44,6 +49,7 @@ export default function FinanzasPage() {
   const [criterio, setCriterio] = useState<CriterioRanking>("ingresos");
   const [cargando, setCargando] = useState(true);
   const [ventaAbierta, setVentaAbierta] = useState(false);
+  const [ventaEditando, setVentaEditando] = useState<Venta | null>(null);
   const [gastoAbierto, setGastoAbierto] = useState(false);
   const [gastoEditando, setGastoEditando] = useState<Gasto | null>(null);
 
@@ -82,6 +88,9 @@ export default function FinanzasPage() {
   );
 
   const ventasDelMes = ventas.filter((v) => v.fecha.slice(0, 7) === mes);
+  // De todos los meses: una deuda de agosto se sigue debiendo en septiembre.
+  const pendientes = pendientesDeCobro(ventas);
+  const totalPendiente = pendientes.reduce((t, v) => t + totalVenta(v), 0);
   const gastosDelMes = gastos.filter((g) => g.fecha.slice(0, 7) === mes);
 
   // 12 meses para elegir, contando siempre desde hoy: si estamos en enero
@@ -110,6 +119,17 @@ export default function FinanzasPage() {
     }
   }
 
+  async function cambiarCobrada(v: Venta, cobrada: boolean) {
+    const previo = ventas;
+    setVentas((prev) => prev.map((x) => (x.id === v.id ? { ...x, cobrada } : x)));
+    try {
+      await marcarCobrada(v.id, cobrada);
+    } catch {
+      setVentas(previo);
+      alert("No se pudo actualizar el cobro. Probá de nuevo.");
+    }
+  }
+
   async function borrarGasto(g: Gasto) {
     if (!confirm(`¿Eliminar "${g.descripcion}"?`)) return;
     const previo = gastos;
@@ -128,7 +148,10 @@ export default function FinanzasPage() {
         <h1 className="font-serif text-xl">Finanzas</h1>
         <div className="flex flex-wrap gap-3">
           <button
-            onClick={() => setVentaAbierta(true)}
+            onClick={() => {
+              setVentaEditando(null);
+              setVentaAbierta(true);
+            }}
             className="rounded-full bg-rosea-400 px-4 py-2 text-sm text-white hover:bg-rosea-500"
           >
             + Venta
@@ -169,6 +192,44 @@ export default function FinanzasPage() {
             </div>
 
             <ResumenCards actual={actual} anterior={anterior} />
+
+            <div className="mt-3">
+              <IndicadoresCards
+                resumen={actual}
+                clientas={metricasClientasMes(ventas, mes)}
+                stock={valorStock(productos)}
+              />
+            </div>
+
+            {pendientes.length > 0 && (
+              <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                <h2 className="font-serif text-lg text-amber-900">
+                  Por cobrar: {formatearPrecio(totalPendiente)}
+                </h2>
+                <ul className="mt-2 space-y-2">
+                  {pendientes.map((v) => (
+                    <li
+                      key={v.id}
+                      className="flex flex-wrap items-center gap-3 text-sm text-amber-900"
+                    >
+                      <span className="w-20 shrink-0 tabular-nums">
+                        {formatearFecha(v.fecha)}
+                      </span>
+                      <span className="min-w-32 flex-1">{nombreClienta(v)}</span>
+                      <span className="shrink-0 tabular-nums">
+                        {formatearPrecio(totalVenta(v))}
+                      </span>
+                      <button
+                        onClick={() => cambiarCobrada(v, true)}
+                        className="shrink-0 rounded-full bg-white px-3 py-1 text-xs text-amber-900 ring-1 ring-amber-300 hover:bg-amber-100"
+                      >
+                        Marcar cobrada
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
 
             <p className="mt-3 text-xs text-neutral-500">
               <strong className="font-medium">Caja</strong> es la plata que
@@ -271,7 +332,16 @@ export default function FinanzasPage() {
                     <div className="min-w-40 flex-1">
                       <p className="text-sm text-neutral-800">
                         {nombreClienta(v)}
-                        <span className="text-neutral-400"> · {v.canal}</span>
+                        <span className="text-neutral-400">
+                          {" "}
+                          · {v.canal}
+                          {v.medio_pago && ` · ${v.medio_pago}`}
+                        </span>
+                        {!v.cobrada && (
+                          <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-900">
+                            Por cobrar
+                          </span>
+                        )}
                       </p>
                       <p className="truncate text-xs text-neutral-500">
                         {v.items.map((i) => `${i.cantidad}× ${i.nombre}`).join(", ")}
@@ -283,6 +353,15 @@ export default function FinanzasPage() {
                     <span className="shrink-0 text-sm text-neutral-800 tabular-nums">
                       {formatearPrecio(totalVenta(v))}
                     </span>
+                    <button
+                      onClick={() => {
+                        setVentaEditando(v);
+                        setVentaAbierta(true);
+                      }}
+                      className="shrink-0 rounded-full px-3 py-1 text-xs text-neutral-500 ring-1 ring-neutral-200 hover:bg-neutral-50"
+                    >
+                      Editar
+                    </button>
                     <button
                       onClick={() => borrarVenta(v)}
                       aria-label={`Eliminar venta del ${formatearFecha(v.fecha)}`}
@@ -353,6 +432,7 @@ export default function FinanzasPage() {
 
       {ventaAbierta && (
         <VentaForm
+          venta={ventaEditando}
           productos={productos}
           clientas={clientas}
           onClose={() => setVentaAbierta(false)}

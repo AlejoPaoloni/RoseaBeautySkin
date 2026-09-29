@@ -1,4 +1,4 @@
-import type { CategoriaGasto, Gasto, Venta } from "./types";
+import type { CategoriaGasto, Gasto, MedioPago, Venta } from "./types";
 import { CATEGORIAS_GASTO } from "./types";
 
 // Las fechas de ventas y gastos son columnas `date` de Postgres: llegan como
@@ -89,8 +89,13 @@ export interface ResumenMes {
   gastosMercaderia: number;
   gastosOperativos: number;
   // Caja: lo que entro menos todo lo que salio este mes. Sirve para saber
-  // cuanta plata quedo en el bolsillo.
+  // cuanta plata quedo en el bolsillo. Una venta sin cobrar no entro: no
+  // cuenta en la caja (si en ingresos y ganancia, que miden lo vendido).
   resultadoCaja: number;
+  // Ventas del mes que la clienta todavia debe.
+  pendienteCobro: number;
+  // Lo cobrado del mes por medio. "Sin dato" = ventas de antes de 012.
+  cobradoPorMedio: Record<MedioPago | "Sin dato", number>;
   // Margen: ingresos menos el costo de lo vendido y los gastos que no son
   // compra de stock. No suma los gastos de Mercaderia porque ese costo ya
   // esta contado en costoVendido — contarlo dos veces inventaria perdidas.
@@ -119,6 +124,17 @@ export function resumenMes(
 
   const gananciaMargen = ingresos - costoVendido - gastosOperativos;
 
+  const cobradoPorMedio: Record<MedioPago | "Sin dato", number> = {
+    Transferencia: 0,
+    Efectivo: 0,
+    "Sin dato": 0,
+  };
+  let pendienteCobro = 0;
+  for (const v of delMes) {
+    if (!v.cobrada) pendienteCobro += totalVenta(v);
+    else cobradoPorMedio[v.medio_pago ?? "Sin dato"] += totalVenta(v);
+  }
+
   return {
     mes,
     ingresos,
@@ -128,9 +144,62 @@ export function resumenMes(
     gastosTotal,
     gastosMercaderia,
     gastosOperativos,
-    resultadoCaja: ingresos - gastosTotal,
+    resultadoCaja: ingresos - pendienteCobro - gastosTotal,
+    pendienteCobro,
+    cobradoPorMedio,
     gananciaMargen,
     margenPct: ingresos === 0 ? null : (gananciaMargen / ingresos) * 100,
+  };
+}
+
+// Todas las ventas adeudadas, de cualquier mes: la mas vieja primero, que es
+// la que mas urge reclamar.
+export function pendientesDeCobro(ventas: Venta[]): Venta[] {
+  return ventas
+    .filter((v) => !v.cobrada)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.created_at.localeCompare(b.created_at));
+}
+
+// Identidad de la clienta de una venta: la ficha si tiene, si no el nombre
+// suelto normalizado (ventas viejas). null = venta sin clienta.
+function claveClienta(v: Venta): string | null {
+  if (v.cliente_id) return `id:${v.cliente_id}`;
+  const nombre = v.cliente?.trim().toLowerCase();
+  return nombre ? `nombre:${nombre}` : null;
+}
+
+export interface MetricasClientas {
+  ticketPromedio: number;
+  // Clientas cuya primera compra de todas fue este mes.
+  nuevas: number;
+  // Clientas que compraron este mes y ya habian comprado antes.
+  volvieron: number;
+}
+
+export function metricasClientasMes(ventas: Venta[], mes: string): MetricasClientas {
+  const delMes = ventas.filter((v) => mesDe(v.fecha) === mes);
+  const ingresos = delMes.reduce((t, v) => t + totalVenta(v), 0);
+
+  const primeraCompra = new Map<string, string>();
+  for (const v of ventas) {
+    const clave = claveClienta(v);
+    if (!clave) continue;
+    const previa = primeraCompra.get(clave);
+    if (!previa || v.fecha < previa) primeraCompra.set(clave, v.fecha);
+  }
+
+  const delMesUnicas = new Set(
+    delMes.map(claveClienta).filter((c): c is string => c !== null)
+  );
+  let nuevas = 0;
+  for (const clave of delMesUnicas) {
+    if (mesDe(primeraCompra.get(clave)!) === mes) nuevas += 1;
+  }
+
+  return {
+    ticketPromedio: delMes.length === 0 ? 0 : Math.round(ingresos / delMes.length),
+    nuevas,
+    volvieron: delMesUnicas.size - nuevas,
   };
 }
 

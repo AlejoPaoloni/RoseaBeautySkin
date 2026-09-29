@@ -3,7 +3,9 @@ import {
   agendadas,
   agruparPorDia,
   checklistPorDefecto,
+  clientasInactivas,
   coincide,
+  diferenciaStock,
   estadoSegunStock,
   paraReponer,
   textoReposicion,
@@ -13,13 +15,14 @@ import {
   ordenarTareas,
   pedidosAbiertos,
   productosStockBajo,
+  valorStock,
   progresoChecklist,
   saldoPedido,
   stockBajo,
   tareaVencida,
   totalPedido,
 } from "@/lib/gestion";
-import type { Pedido, Producto, Publicacion, Tarea, Venta } from "@/lib/types";
+import type { Clienta, Pedido, Producto, Publicacion, Tarea, Venta } from "@/lib/types";
 
 let n = 0;
 
@@ -306,6 +309,8 @@ function ventaDe(fecha: string, productoId: string, cantidad: number): Venta {
     cliente: null,
     cliente_id: null,
     canal: "Instagram",
+    medio_pago: "Transferencia",
+    cobrada: true,
     nota: null,
     created_at: `${fecha}T12:00:00Z`,
     items: [
@@ -397,5 +402,66 @@ describe("textoReposicion", () => {
       { producto: producto({ nombre: "Nada" }), cantidad: 0 },
     ]);
     expect(texto).not.toContain("Nada");
+  });
+});
+
+describe("diferenciaStock", () => {
+  const renglon = (producto_id: string | null, cantidad: number) => ({ producto_id, cantidad });
+
+  it("devuelve solo lo que cambio: positivo = descontar, negativo = reponer", () => {
+    const antes = [renglon("a", 2), renglon("b", 1)];
+    const despues = [renglon("a", 3), renglon("c", 1)];
+    expect(diferenciaStock(antes, despues)).toEqual(
+      expect.arrayContaining([
+        { producto_id: "a", cantidad: 1 },
+        { producto_id: "b", cantidad: -1 },
+        { producto_id: "c", cantidad: 1 },
+      ])
+    );
+    expect(diferenciaStock(antes, despues)).toHaveLength(3);
+  });
+
+  it("suma renglones repetidos del mismo producto e ignora los sin producto", () => {
+    const antes = [renglon("a", 1), renglon("a", 1), renglon(null, 5)];
+    const despues = [renglon("a", 2)];
+    expect(diferenciaStock(antes, despues)).toEqual([]);
+  });
+});
+
+describe("valorStock", () => {
+  it("valoriza al costo y al precio lo que hay en mano", () => {
+    const v = valorStock([
+      producto({ stock: 2, costo: 5000, precio: 12000 }),
+      producto({ stock: 1, costo: null, precio: 8000 }),
+      producto({ stock: 0, costo: 3000, precio: 9000 }),
+      producto({ stock: null, costo: 3000, precio: 9000 }),
+    ]);
+    expect(v).toEqual({ unidades: 3, alCosto: 10000, alPrecio: 32000, sinCosto: 1 });
+  });
+});
+
+describe("clientasInactivas", () => {
+  const clienta = (id: string, nombre: string): Clienta => ({
+    id,
+    nombre,
+    contacto: null,
+    nota: null,
+    created_at: "2026-01-01T00:00:00Z",
+  });
+
+  it("lista las que no compran hace mas de 60 dias, la mas olvidada primero", () => {
+    const ana = clienta("ana", "Ana");
+    const bea = clienta("bea", "Bea");
+    const caro = clienta("caro", "Caro");
+    const nunca = clienta("nunca", "Nunca compro");
+    const ventas = [
+      { ...ventaDe("2026-07-01", "p", 1), cliente_id: "ana" },
+      { ...ventaDe("2026-09-20", "p", 1), cliente_id: "bea" },
+      { ...ventaDe("2026-05-01", "p", 1), cliente_id: "caro" },
+      { ...ventaDe("2026-06-01", "p", 1), cliente_id: "caro" },
+    ];
+    const r = clientasInactivas([ana, bea, caro, nunca], ventas, "2026-09-28");
+    expect(r.map((x) => x.clienta.id)).toEqual(["caro", "ana"]);
+    expect(r[0]).toMatchObject({ ultimaCompra: "2026-06-01", compras: 2 });
   });
 });

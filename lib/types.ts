@@ -56,6 +56,9 @@ export type CategoriaGasto =
 
 export type Canal = "Instagram" | "WhatsApp" | "Presencial" | "Otro";
 
+export type MedioPago = "Efectivo" | "Transferencia";
+export const MEDIOS_PAGO: MedioPago[] = ["Transferencia", "Efectivo"];
+
 export interface Gasto {
   id: string;
   // Fecha del gasto en formato YYYY-MM-DD (columna date de Postgres).
@@ -86,6 +89,10 @@ export interface Venta {
   cliente: string | null;
   cliente_id: string | null;
   canal: Canal;
+  // null = venta cargada antes de la migracion 012, sin dato.
+  medio_pago: MedioPago | null;
+  // false = la clienta todavia la debe.
+  cobrada: boolean;
   nota: string | null;
   created_at: string;
   items: VentaItem[];

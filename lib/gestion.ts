@@ -1,4 +1,5 @@
 import type {
+  Clienta,
   Estado,
   PasoChecklist,
   Pedido,
@@ -96,6 +97,77 @@ export function productosStockBajo(productos: Producto[]): Producto[] {
   return productos
     .filter(stockBajo)
     .sort((a, b) => (a.stock ?? 0) - (b.stock ?? 0));
+}
+
+// Cuanto mover el stock al editar una venta: nuevo menos viejo por producto.
+// Positivo = descontar mas, negativo = devolver. Asi el stock se corrige por
+// la diferencia en vez de reponer todo y volver a descontar.
+export function diferenciaStock(
+  antes: { producto_id: string | null; cantidad: number }[],
+  despues: { producto_id: string | null; cantidad: number }[]
+): { producto_id: string; cantidad: number }[] {
+  const delta = new Map<string, number>();
+  for (const [renglones, signo] of [[antes, -1], [despues, 1]] as const) {
+    for (const r of renglones) {
+      if (!r.producto_id) continue;
+      delta.set(r.producto_id, (delta.get(r.producto_id) ?? 0) + signo * r.cantidad);
+    }
+  }
+  return [...delta]
+    .filter(([, cantidad]) => cantidad !== 0)
+    .map(([producto_id, cantidad]) => ({ producto_id, cantidad }));
+}
+
+export interface ValorStock {
+  unidades: number;
+  // Plata invertida en lo que hay en mano (unidades x costo).
+  alCosto: number;
+  // Lo que se facturaria vendiendo todo al precio de lista.
+  alPrecio: number;
+  // Productos con unidades pero sin costo cargado (no suman a alCosto).
+  sinCosto: number;
+}
+
+export function valorStock(productos: Producto[]): ValorStock {
+  const v: ValorStock = { unidades: 0, alCosto: 0, alPrecio: 0, sinCosto: 0 };
+  for (const p of productos) {
+    if (!p.stock || p.stock <= 0) continue;
+    v.unidades += p.stock;
+    v.alPrecio += p.stock * p.precio;
+    if (p.costo == null) v.sinCosto += 1;
+    else v.alCosto += p.stock * p.costo;
+  }
+  return v;
+}
+
+// --- Clientas para volver a escribirles ---
+
+export const DIAS_INACTIVA = 60;
+
+export interface ClientaInactiva {
+  clienta: Clienta;
+  ultimaCompra: string;
+  compras: number;
+}
+
+// Clientas con ficha que compraron alguna vez pero no en los ultimos
+// DIAS_INACTIVA dias. Las que nunca compraron no entran: no hay a quien
+// "recuperar". La mas olvidada primero.
+export function clientasInactivas(
+  clientas: Clienta[],
+  ventas: Venta[],
+  hoy: string
+): ClientaInactiva[] {
+  const limite = restarDias(hoy, DIAS_INACTIVA);
+  const resultado: ClientaInactiva[] = [];
+  for (const c of clientas) {
+    const suyas = ventas.filter((v) => v.cliente_id === c.id);
+    if (suyas.length === 0) continue;
+    const ultimaCompra = suyas.reduce((u, v) => (v.fecha > u ? v.fecha : u), "");
+    if (ultimaCompra >= limite) continue;
+    resultado.push({ clienta: c, ultimaCompra, compras: suyas.length });
+  }
+  return resultado.sort((a, b) => a.ultimaCompra.localeCompare(b.ultimaCompra));
 }
 
 // --- Reposicion (lo que hay que volver a pedirle al proveedor) ---

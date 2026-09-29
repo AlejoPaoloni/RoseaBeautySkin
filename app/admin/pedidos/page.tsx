@@ -101,6 +101,10 @@ export default function PedidosPage() {
           cliente: p.cliente_id ? null : p.cliente_texto,
           cliente_id: p.cliente_id,
           canal: "WhatsApp",
+          // El pedido no registra como se pago: queda sin dato y se completa
+          // editando la venta. Entregado = cobrado.
+          medio_pago: null,
+          cobrada: true,
           nota: `Pedido del ${formatearFecha(p.fecha)}`,
         },
         items

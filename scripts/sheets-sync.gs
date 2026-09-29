@@ -230,6 +230,7 @@ function calcularResumenMensual(ventas, gastos) {
         costoVendido: 0,
         gastosTotal: 0,
         gastosMercaderia: 0,
+        pendiente: 0,
       };
     }
     return meses[mes];
@@ -241,6 +242,9 @@ function calcularResumenMensual(ventas, gastos) {
       f.ingresos += item.precio_unitario * item.cantidad;
       f.costoVendido += item.costo_unitario * item.cantidad;
       f.unidades += item.cantidad;
+      // cobrada === false: la clienta la debe. undefined (antes de la
+      // migracion 012) cuenta como cobrada, igual que en el dashboard.
+      if (venta.cobrada === false) f.pendiente += item.precio_unitario * item.cantidad;
     });
   });
 
@@ -264,7 +268,8 @@ function calcularResumenMensual(ventas, gastos) {
         gastosTotal: f.gastosTotal,
         gastosMercaderia: f.gastosMercaderia,
         gastosOperativos: operativos,
-        resultadoCaja: f.ingresos - f.gastosTotal,
+        // Igual que el dashboard: lo que no se cobro no entro a la caja.
+        resultadoCaja: f.ingresos - f.pendiente - f.gastosTotal,
         gananciaMargen: ganancia,
         margenPct: f.ingresos === 0 ? null : Math.round((ganancia / f.ingresos) * 100),
       };
@@ -354,7 +359,7 @@ function escribirVentas(ventas, clientas) {
   var encabezados = [
     "Fecha", "Clienta", "Canal", "Producto", "Cantidad",
     "Precio unitario", "Total renglón", "Costo unitario",
-    "Ganancia renglón", "Nota", "ID venta",
+    "Ganancia renglón", "Nota", "Medio de pago", "Cobrada", "ID venta",
   ];
 
   // Igual que el dashboard (nombreClienta en app/admin/finanzas/page.tsx):
@@ -383,6 +388,8 @@ function escribirVentas(ventas, clientas) {
         item.costo_unitario,
         (item.precio_unitario - item.costo_unitario) * item.cantidad,
         venta.nota || "",
+        venta.medio_pago || "Sin dato",
+        venta.cobrada === false ? "Por cobrar" : "Sí",
         venta.id,
       ]);
     });
@@ -417,7 +424,10 @@ function escribirVentas(ventas, clientas) {
     formatoMoneda(hoja.getRange(2, 6, filas.length, 4));
     // ID venta es un dato tecnico de cruce, no algo que se lea: se achica y
     // se apaga para que no compita visualmente con las columnas que importan.
-    hoja.getRange(2, 11, filas.length, 1).setFontColor(COLOR.textoSuave).setFontSize(9);
+    hoja.getRange(2, 13, filas.length, 1).setFontColor(COLOR.textoSuave).setFontSize(9);
+    filas.forEach(function (f, i) {
+      if (f[11] === "Por cobrar") hoja.getRange(i + 2, 12).setFontColor("#92400e").setFontWeight("bold");
+    });
 
     aplicarBandas(hoja.getRange(1, 1, filas.length + 1, cols));
     hoja.getRange(1, 1, filas.length + 1, cols).createFilter();
