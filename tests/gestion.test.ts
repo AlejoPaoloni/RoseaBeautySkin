@@ -15,12 +15,15 @@ import {
   ideas,
   ordenarTareas,
   pedidosAbiertos,
+  pedidosParaEntregar,
+  proximasPublicaciones,
   productosStockBajo,
   valorStock,
   progresoChecklist,
   saldoPedido,
   stockBajo,
   tareaVencida,
+  tareasUrgentes,
   totalPedido,
 } from "@/lib/gestion";
 import type { Clienta, Pedido, Producto, Publicacion, Tarea, Venta } from "@/lib/types";
@@ -513,5 +516,48 @@ describe("aplicarLlegada", () => {
     );
     expect(r.cambios).toEqual([{ id: p.id, stock: 4, costo: 1200, estado: "Disponible" }]);
     expect(r.totalMercaderia).toBe(1000 + 2400);
+  });
+});
+
+describe("pantalla de inicio", () => {
+  const HOY = "2026-09-29";
+
+  it("pedidosParaEntregar: solo los que ya llegaron, el mas viejo primero", () => {
+    const base = { cliente_id: null, cliente_texto: "X", sena: 0, nota: null, venta_id: null, created_at: "", items: [] };
+    const pedidos: Pedido[] = [
+      { ...base, id: "1", fecha: "2026-09-20", estado: "Llegó" },
+      { ...base, id: "2", fecha: "2026-09-10", estado: "Llegó" },
+      { ...base, id: "3", fecha: "2026-09-01", estado: "En camino" },
+      { ...base, id: "4", fecha: "2026-09-01", estado: "Entregado" },
+    ];
+    expect(pedidosParaEntregar(pedidos).map((p) => p.id)).toEqual(["2", "1"]);
+  });
+
+  it("tareasUrgentes: vencidas y de hoy, sin hechas ni sin fecha", () => {
+    const t = (id: string, fecha_limite: string | null, hecha = false): Tarea => ({
+      id, texto: id, hecha, fecha_limite, created_at: "",
+    });
+    const r = tareasUrgentes(
+      [t("hoy", HOY), t("vencida", "2026-09-20"), t("manana", "2026-09-30"), t("sin", null), t("hecha", "2026-09-01", true)],
+      HOY
+    );
+    expect(r.map((x) => x.id)).toEqual(["vencida", "hoy"]);
+  });
+
+  it("proximasPublicaciones: 7 dias adelante y las atrasadas sin publicar", () => {
+    const pub = (id: string, fecha: string | null, estado: Publicacion["estado"] = "Guionado") =>
+      publicacion({ id, fecha, estado });
+    const r = proximasPublicaciones(
+      [
+        pub("atrasada", "2026-09-25"),
+        pub("ya-publicada", "2026-09-26", "Publicado"),
+        pub("hoy", HOY),
+        pub("en-una-semana", "2026-10-06"),
+        pub("lejos", "2026-10-07"),
+        pub("idea", null),
+      ],
+      HOY
+    );
+    expect(r.map((p) => p.id)).toEqual(["atrasada", "hoy", "en-una-semana"]);
   });
 });

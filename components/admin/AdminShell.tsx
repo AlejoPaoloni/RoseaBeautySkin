@@ -24,6 +24,9 @@ function trazo(d: string) {
   };
 }
 
+const IconoInicio = trazo(
+  "M3.5 9 10 3.5 16.5 9v7a.5.5 0 0 1-.5.5h-3.5v-4.5h-5v4.5H4a.5.5 0 0 1-.5-.5V9Z"
+);
 const IconoProductos = trazo(
   "M3.5 6.5h13l-1 10.5h-11l-1-10.5ZM7 6.5V5a3 3 0 0 1 6 0v1.5"
 );
@@ -67,7 +70,8 @@ interface Seccion {
 }
 
 const SECCIONES: Seccion[] = [
-  { href: "/admin", etiqueta: "Productos", icono: IconoProductos },
+  { href: "/admin", etiqueta: "Inicio", icono: IconoInicio },
+  { href: "/admin/productos", etiqueta: "Productos", icono: IconoProductos },
   { href: "/admin/contenido", etiqueta: "Contenido", icono: IconoContenido },
   { href: "/admin/finanzas", etiqueta: "Finanzas", icono: IconoFinanzas },
   { href: "/admin/calculadora", etiqueta: "Calculadora", icono: IconoCalculadora },

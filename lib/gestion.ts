@@ -316,6 +316,35 @@ export function pedidosAbiertos(pedidos: Pedido[]): Pedido[] {
   return pedidos.filter((p) => p.estado !== "Entregado");
 }
 
+// --- Pantalla de inicio: lo que pide atencion hoy ---
+
+// Pedidos de clientas que ya llegaron y falta entregar: el mas viejo primero,
+// que es el que lleva mas tiempo esperando.
+export function pedidosParaEntregar(pedidos: Pedido[]): Pedido[] {
+  return pedidos
+    .filter((p) => p.estado === "Llegó")
+    .sort((a, b) => a.fecha.localeCompare(b.fecha));
+}
+
+// Tareas sin hacer que vencen hoy o ya vencieron.
+export function tareasUrgentes(tareas: Tarea[], hoy: string): Tarea[] {
+  return tareas
+    .filter((t) => !t.hecha && t.fecha_limite !== null && t.fecha_limite <= hoy)
+    .sort((a, b) => a.fecha_limite!.localeCompare(b.fecha_limite!));
+}
+
+// Publicaciones agendadas para los proximos 7 dias, mas las atrasadas que
+// todavia no se publicaron. Las ideas sin fecha no entran.
+export function proximasPublicaciones(
+  publicaciones: Publicacion[],
+  hoy: string
+): Publicacion[] {
+  const hasta = restarDias(hoy, -7);
+  return publicaciones
+    .filter((p) => p.fecha !== null && p.fecha <= hasta && p.estado !== "Publicado")
+    .sort((a, b) => a.fecha!.localeCompare(b.fecha!));
+}
+
 // Normaliza para comparar: minusculas y sin espacios de mas. Devuelve true si
 // `texto` no viene vacio (sin busqueda, todo matchea) o si `campos` contiene
 // el termino en alguno de sus valores no nulos.
