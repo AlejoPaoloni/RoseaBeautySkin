@@ -159,8 +159,12 @@ export default function AdminShell({
       </aside>
 
       {/* Mobile: barra abajo. Se carga desde el celular con una mano, los
-          destinos tienen que caer donde llega el pulgar. */}
-      <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-rosea-100 bg-white md:hidden print:hidden">
+          destinos tienen que caer donde llega el pulgar. Flotante y
+          separada del borde: pegada abajo quedaba sobre la rayita del
+          iPhone (con el acceso directo en pantalla completa). La distancia
+          suma el alto de esa zona, safe-area-inset-bottom (ver el viewport
+          de app/admin/layout.tsx). */}
+      <nav className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-30 flex rounded-2xl border border-rosea-100 bg-white/95 shadow-lg shadow-rosea-900/10 backdrop-blur md:hidden print:hidden">
         {principales.map(({ href, etiqueta, icono: Icono }) => (
           <Link
             key={href}
@@ -194,7 +198,7 @@ export default function AdminShell({
             onClick={() => setMenuAbierto(false)}
             className="fixed inset-0 z-20 bg-black/20 md:hidden"
           />
-          <div className="fixed inset-x-0 bottom-14 z-30 border-t border-rosea-100 bg-white p-2 md:hidden">
+          <div className="fixed inset-x-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-30 rounded-2xl border border-rosea-100 bg-white p-2 shadow-lg shadow-rosea-900/10 md:hidden">
             {secundarias.map(({ href, etiqueta, icono: Icono }) => (
               <Link
                 key={href}
@@ -227,8 +231,10 @@ export default function AdminShell({
         </>
       )}
 
-      {/* Espacio para que la barra de abajo no tape la última fila. */}
-      <div className="pb-16 md:pb-0 print:pb-0">{children}</div>
+      {/* Espacio para que la barra flotante no tape la última fila. */}
+      <div className="pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-0 print:pb-0">
+        {children}
+      </div>
     </div>
   );
 }

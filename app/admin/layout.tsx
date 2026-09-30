@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import AdminShell from "@/components/admin/AdminShell";
 
 // robots.ts ya bloquea /admin, esto es la segunda capa: por si un crawler
@@ -10,6 +10,14 @@ export const metadata: Metadata = {
   // y no bajo /admin porque el proxy mandaria el pedido del manifest al login.
   manifest: "/admin.webmanifest",
   appleWebApp: { capable: true, title: "Rosea Admin" },
+};
+
+// viewport-fit=cover: sin esto el iPhone no informa cuanto mide la zona de
+// la rayita de abajo (env(safe-area-inset-bottom) vale 0) y la barra de
+// navegacion del celular quedaba pegada al borde, debajo de la rayita. Solo
+// en el admin: la landing no tiene barra fija abajo.
+export const viewport: Viewport = {
+  viewportFit: "cover",
 };
 
 export default function AdminLayout({
