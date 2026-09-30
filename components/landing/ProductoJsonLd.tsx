@@ -19,40 +19,43 @@ export default function ProductoJsonLd({ producto }: { producto: Producto }) {
   const descripcion =
     producto.descripcion_larga ?? producto.descripcion_corta ?? undefined;
 
-  const product = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    "@id": url,
-    name: producto.nombre,
-    url,
-    ...(descripcion ? { description: descripcion } : {}),
-    image: imagenesProducto(producto),
-    // El uuid es el identificador estable del producto aunque cambie el slug.
-    sku: producto.id,
-    ...(producto.marca ? { brand: { "@type": "Brand", name: producto.marca } } : {}),
-    category: `${producto.categoria} > ${producto.subcategoria}`,
-    ...(producto.tonos && producto.tonos.length > 0
-      ? { color: producto.tonos.map((t) => t.nombre).join(", ") }
-      : {}),
-    // Sin offers en por encargo y sin stock: se cotizan por consulta y el
-    // precio no se muestra en ningun lado publico. Google exige price en todo Offer
-    // que declares — uno sin price no es "mas discreto", es invalido, y asi
-    // lo marcaba Search Console en Fragmentos de producto. Omitir offers
-    // entero deja el Product igual de valido, solo sin la parte de precio.
-    ...(tienePrecioPublico(producto)
-      ? {
-          offers: {
-            "@type": "Offer",
-            url,
-            priceCurrency: "ARS",
-            price: producto.precio,
-            availability: DISPONIBILIDAD[producto.estado],
-            itemCondition: "https://schema.org/NewCondition",
-            seller: { "@type": "Organization", name: config.marca },
-          },
-        }
-      : {}),
-  };
+  // Sin Product entero en por encargo y sin stock. Google pide offers, review
+  // o aggregateRating para dar un Product por valido: sin ninguno de los tres
+  // marca "Debe especificarse offers, review o aggregateRating" en Fragmentos
+  // de producto. Y los tres nos faltan — esos productos se cotizan por
+  // consulta, el precio no se publica en ningun lado y todavia no hay resenas
+  // que declarar. Omitir el Product no cuesta nada: lo unico que habilita es
+  // el resultado enriquecido, al que sin precio no pueden acceder igual. El
+  // BreadcrumbList va para todos, ese si es valido solo.
+  const product = tienePrecioPublico(producto)
+    ? {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "@id": url,
+        name: producto.nombre,
+        url,
+        ...(descripcion ? { description: descripcion } : {}),
+        image: imagenesProducto(producto),
+        // El uuid es el identificador estable del producto aunque cambie el slug.
+        sku: producto.id,
+        ...(producto.marca
+          ? { brand: { "@type": "Brand", name: producto.marca } }
+          : {}),
+        category: `${producto.categoria} > ${producto.subcategoria}`,
+        ...(producto.tonos && producto.tonos.length > 0
+          ? { color: producto.tonos.map((t) => t.nombre).join(", ") }
+          : {}),
+        offers: {
+          "@type": "Offer",
+          url,
+          priceCurrency: "ARS",
+          price: producto.precio,
+          availability: DISPONIBILIDAD[producto.estado],
+          itemCondition: "https://schema.org/NewCondition",
+          seller: { "@type": "Organization", name: config.marca },
+        },
+      }
+    : null;
 
   const breadcrumb = {
     "@context": "https://schema.org",
@@ -71,10 +74,12 @@ export default function ProductoJsonLd({ producto }: { producto: Producto }) {
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLd(product) }}
-      />
+      {product && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLd(product) }}
+        />
+      )}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumb) }}
