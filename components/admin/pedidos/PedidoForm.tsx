@@ -182,13 +182,13 @@ export default function PedidoForm({
             {lineas.map((l, i) => (
               <div
                 key={l.clave}
-                className="grid grid-cols-[1fr_4rem_6rem_2rem] items-center gap-2"
+                className="grid grid-cols-[5rem_1fr_2rem] items-end gap-2 border-b border-neutral-100 pb-2 sm:grid-cols-[1fr_4rem_6rem_2rem] sm:items-center sm:border-0 sm:pb-0"
               >
                 <select
                   value={l.producto_id ?? ""}
                   onChange={(e) => elegirProducto(l.clave, e.target.value)}
                   aria-label={`Producto del renglón ${i + 1}`}
-                  className="w-full rounded-lg border border-neutral-200 px-2 py-2 text-sm"
+                  className="col-span-3 w-full min-w-0 rounded-lg border border-neutral-200 px-2 py-2 text-sm sm:col-span-1"
                 >
                   <option value="">Elegí un producto…</option>
                   {productos.map((p) => (
@@ -198,32 +198,38 @@ export default function PedidoForm({
                     </option>
                   ))}
                 </select>
-                <input
-                  type="number"
-                  min={1}
-                  step={1}
-                  value={l.cantidad}
-                  onChange={(e) =>
-                    editarLinea(l.clave, "cantidad", Number(e.target.value))
-                  }
-                  aria-label={`Cantidad del renglón ${i + 1}`}
-                  className="w-full rounded-lg border border-neutral-200 px-2 py-2 text-sm outline-none focus:border-rosea-300"
-                />
-                <input
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={l.precio_estimado}
-                  onChange={(e) =>
-                    editarLinea(
-                      l.clave,
-                      "precio_estimado",
-                      Number(e.target.value)
-                    )
-                  }
-                  aria-label={`Precio estimado del renglón ${i + 1}`}
-                  className="w-full rounded-lg border border-neutral-200 px-2 py-2 text-sm outline-none focus:border-rosea-300"
-                />
+                <label className="block min-w-0">
+                  <span className="mb-0.5 block text-[10px] text-neutral-500 sm:hidden">Cantidad</span>
+                  <input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={l.cantidad}
+                    onChange={(e) =>
+                      editarLinea(l.clave, "cantidad", Number(e.target.value))
+                    }
+                    aria-label={`Cantidad del renglón ${i + 1}`}
+                    className="w-full rounded-lg border border-neutral-200 px-2 py-2 text-sm outline-none focus:border-rosea-300"
+                  />
+                </label>
+                <label className="block min-w-0">
+                  <span className="mb-0.5 block text-[10px] text-neutral-500 sm:hidden">Precio</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={l.precio_estimado}
+                    onChange={(e) =>
+                      editarLinea(
+                        l.clave,
+                        "precio_estimado",
+                        Number(e.target.value)
+                      )
+                    }
+                    aria-label={`Precio estimado del renglón ${i + 1}`}
+                    className="w-full rounded-lg border border-neutral-200 px-2 py-2 text-sm outline-none focus:border-rosea-300"
+                  />
+                </label>
                 <button
                   type="button"
                   onClick={() =>

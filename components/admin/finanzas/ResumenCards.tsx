@@ -31,25 +31,28 @@ function Card({
   monto,
   pie,
   destacada = false,
+  ancha = false,
 }: {
   titulo: string;
   monto: number;
   pie: React.ReactNode;
   destacada?: boolean;
+  // Ocupa las dos columnas en celular (en escritorio van 4 en fila).
+  ancha?: boolean;
 }) {
   return (
     <div
-      className={`rounded-2xl border p-4 ${
+      className={`min-w-0 rounded-2xl border p-4 ${ancha ? "col-span-2 lg:col-span-1" : ""} ${
         destacada
           ? "border-rosea-200 bg-rosea-50"
           : "border-neutral-200 bg-white"
       }`}
     >
-      <p className="text-xs tracking-wider text-neutral-500 uppercase">
+      <p className="text-[11px] tracking-wider text-neutral-500 uppercase sm:text-xs">
         {titulo}
       </p>
       <p
-        className={`mt-1 font-serif text-2xl ${
+        className={`mt-1 font-serif text-xl sm:text-2xl ${
           monto < 0 ? "text-red-600" : "text-neutral-800"
         }`}
       >
@@ -62,11 +65,14 @@ function Card({
 
 export default function ResumenCards({ actual, anterior, proyeccion = null }: Props) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    // En celular: 2 columnas (Ventas y Caja a lo ancho) en vez de 4 tarjetas
+    // apiladas que empujaban todo lo demas varias pantallas para abajo.
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <Card
         titulo="Ventas del mes"
         monto={actual.ingresos}
         destacada
+        ancha
         pie={
           <>
             <Variacion actual={actual.ingresos} anterior={anterior.ingresos} />
@@ -99,6 +105,7 @@ export default function ResumenCards({ actual, anterior, proyeccion = null }: Pr
       <Card
         titulo="Resultado de caja"
         monto={actual.resultadoCaja}
+        ancha
         pie={
           <span className="text-xs text-neutral-500">
             {actual.cantidadVentas} venta

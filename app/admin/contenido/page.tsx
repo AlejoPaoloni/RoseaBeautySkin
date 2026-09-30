@@ -118,7 +118,7 @@ export default function ContenidoPage() {
         {cargando ? (
           <p className="text-center text-neutral-400">Cargando…</p>
         ) : (
-          <div className="grid gap-6 lg:grid-cols-[1fr_20rem]">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_20rem]">
             <section className="rounded-2xl border border-neutral-200 bg-white p-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">

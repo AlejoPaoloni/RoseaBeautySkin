@@ -205,7 +205,7 @@ export default function CalculadoraPage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-8">
-        <div className="grid gap-6 lg:grid-cols-[1fr_22rem]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_22rem]">
           <div className="space-y-6">
             <section className="rounded-2xl border border-neutral-200 bg-white p-5">
               <h2 className="font-serif text-lg text-rosea-700">El producto</h2>

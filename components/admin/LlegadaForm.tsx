@@ -150,14 +150,14 @@ export default function LlegadaForm({ productos, inicial, onClose, onSaved }: Pr
                   : null;
               return (
                 <div key={l.clave}>
-                  <div className="grid grid-cols-[1fr_4.5rem_7rem_2rem] items-center gap-2">
+                  <div className="grid grid-cols-[5rem_1fr_2rem] items-end gap-2 sm:grid-cols-[1fr_4.5rem_7rem_2rem] sm:items-center">
                     <select
                       value={l.producto_id}
                       onChange={(e) =>
                         editar(l.clave, { producto_id: e.target.value, costo: costoDe(e.target.value) })
                       }
                       aria-label={`Producto ${i + 1}`}
-                      className="w-full rounded-lg border border-neutral-200 px-2 py-2 text-sm"
+                      className="col-span-3 w-full min-w-0 rounded-lg border border-neutral-200 px-2 py-2 text-sm sm:col-span-1"
                     >
                       <option value="">Elegí un producto…</option>
                       {productos.map((x) => (
@@ -166,24 +166,30 @@ export default function LlegadaForm({ productos, inicial, onClose, onSaved }: Pr
                         </option>
                       ))}
                     </select>
-                    <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={l.unidades}
-                      onChange={(e) => editar(l.clave, { unidades: Math.max(0, Math.floor(Number(e.target.value) || 0)) })}
-                      aria-label={`Unidades del producto ${i + 1}`}
-                      className="w-full rounded-lg border border-neutral-200 px-2 py-2 text-sm outline-none focus:border-rosea-300"
-                    />
-                    <input
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={l.costo}
-                      onChange={(e) => editar(l.clave, { costo: Math.max(0, Math.round(Number(e.target.value) || 0)) })}
-                      aria-label={`Costo unitario del producto ${i + 1}`}
-                      className="w-full rounded-lg border border-neutral-200 px-2 py-2 text-sm outline-none focus:border-rosea-300"
-                    />
+                    <label className="block min-w-0">
+                      <span className="mb-0.5 block text-[10px] text-neutral-500 sm:hidden">Unidades</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={l.unidades}
+                        onChange={(e) => editar(l.clave, { unidades: Math.max(0, Math.floor(Number(e.target.value) || 0)) })}
+                        aria-label={`Unidades del producto ${i + 1}`}
+                        className="w-full rounded-lg border border-neutral-200 px-2 py-2 text-sm outline-none focus:border-rosea-300"
+                      />
+                    </label>
+                    <label className="block min-w-0">
+                      <span className="mb-0.5 block text-[10px] text-neutral-500 sm:hidden">Costo unitario</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step={1}
+                        value={l.costo}
+                        onChange={(e) => editar(l.clave, { costo: Math.max(0, Math.round(Number(e.target.value) || 0)) })}
+                        aria-label={`Costo unitario del producto ${i + 1}`}
+                        className="w-full rounded-lg border border-neutral-200 px-2 py-2 text-sm outline-none focus:border-rosea-300"
+                      />
+                    </label>
                     <button
                       type="button"
                       onClick={() => setLineas((prev) => prev.filter((x) => x.clave !== l.clave))}

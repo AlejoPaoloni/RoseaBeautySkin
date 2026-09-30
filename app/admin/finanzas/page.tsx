@@ -285,8 +285,8 @@ export default function FinanzasPage() {
               <GraficoEvolucion serie={serie} />
             </section>
 
-            <div className="mt-6 grid gap-6 lg:grid-cols-2">
-              <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+            <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <section className="min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
                 <ListaBarras
                   titulo="Más vendidos"
                   vacio={
@@ -343,7 +343,7 @@ export default function FinanzasPage() {
                   }))}
                 />
               </section>
-              <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+              <section className="min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
                 <ListaBarras
                   titulo="Gastos por categoría"
                   vacio="Sin gastos cargados este mes."
@@ -358,11 +358,11 @@ export default function FinanzasPage() {
               </section>
             </div>
 
-            <div className="mt-6 grid gap-6 lg:grid-cols-2">
-              <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+            <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <section className="min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
                 <DesgloseVentas ventas={ventas} productos={productos} mes={mes} />
               </section>
-              <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+              <section className="min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
                 <PuntoEquilibrioCard
                   pe={puntoEquilibrio(ventas, gastos, mes)}
                   vendidoMes={actual.ingresos}

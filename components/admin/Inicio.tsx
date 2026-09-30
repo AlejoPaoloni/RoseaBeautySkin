@@ -78,8 +78,10 @@ export default function Inicio({ datos, hoy }: { datos: DatosInicio; hoy: string
         <p className="text-xs text-neutral-500 first-letter:uppercase">{fechaLarga(hoy)}</p>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-8">
-        <div className="grid gap-3 sm:grid-cols-3">
+      <main className="mx-auto max-w-5xl px-4 py-6 sm:py-8">
+        {/* En celular: ventas a lo ancho y las otras dos lado a lado, para
+            que los numeros no ocupen toda la primera pantalla. */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Numero
             titulo="Ventas del mes"
             valor={formatearPrecio(resumen.ingresos)}
@@ -90,6 +92,7 @@ export default function Inicio({ datos, hoy }: { datos: DatosInicio; hoy: string
             }
             href="/admin/finanzas"
             destacado
+            ancho
           />
           <Numero
             titulo="Ganancia del mes"
@@ -120,7 +123,11 @@ export default function Inicio({ datos, hoy }: { datos: DatosInicio; hoy: string
           </p>
         )}
 
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        {/* grid-cols-1 explicito (y min-w-0 en cada bloque): sin eso la
+            columna implicita toma el ancho minimo del contenido, y los
+            nombres largos (que no se parten, se cortan con …) estiraban la
+            pagina mas alla de la pantalla del celular. */}
+        <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Bloque
             titulo="Pedidos para entregar"
             cantidad={entregar.length}
@@ -228,6 +235,7 @@ function Numero({
   href,
   destacado = false,
   alerta = false,
+  ancho = false,
 }: {
   titulo: string;
   valor: string;
@@ -235,11 +243,15 @@ function Numero({
   href: string;
   destacado?: boolean;
   alerta?: boolean;
+  // Ocupa las dos columnas en celular.
+  ancho?: boolean;
 }) {
   return (
     <Link
       href={href}
-      className={`block rounded-2xl border p-4 transition-colors hover:border-rosea-300 ${
+      className={`block min-w-0 rounded-2xl border p-4 transition-colors hover:border-rosea-300 ${
+        ancho ? "col-span-2 sm:col-span-1" : ""
+      } ${
         alerta
           ? "border-amber-200 bg-amber-50"
           : destacado
@@ -247,8 +259,8 @@ function Numero({
             : "border-neutral-200 bg-white"
       }`}
     >
-      <p className="text-xs tracking-wider text-neutral-500 uppercase">{titulo}</p>
-      <p className="mt-1 font-serif text-2xl text-neutral-800">{valor}</p>
+      <p className="text-[11px] tracking-wider text-neutral-500 uppercase sm:text-xs">{titulo}</p>
+      <p className="mt-1 font-serif text-xl text-neutral-800 sm:text-2xl">{valor}</p>
       <p className={`mt-1 text-xs ${alerta ? "text-amber-800" : "text-neutral-500"}`}>{pie}</p>
     </Link>
   );
@@ -270,9 +282,9 @@ function Bloque({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-neutral-200 bg-white p-5">
+    <section className="min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="font-serif text-lg text-rosea-700">
+        <h2 className="min-w-0 font-serif text-lg text-rosea-700">
           {titulo}
           {cantidad > 0 && (
             <span className="ml-2 rounded-full bg-rosea-100 px-2 py-0.5 align-middle font-sans text-xs text-rosea-700">

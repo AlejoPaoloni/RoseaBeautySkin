@@ -14,17 +14,24 @@ function Indicador({
   titulo,
   valor,
   pie,
+  ancho = false,
 }: {
   titulo: string;
   valor: React.ReactNode;
   pie: React.ReactNode;
+  // Ocupa las dos columnas en celular.
+  ancho?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-neutral-200 bg-white p-4">
-      <p className="text-xs tracking-wider text-neutral-500 uppercase">
+    <div
+      className={`min-w-0 rounded-2xl border border-neutral-200 bg-white p-4 ${
+        ancho ? "col-span-2 lg:col-span-1" : ""
+      }`}
+    >
+      <p className="text-[11px] tracking-wider text-neutral-500 uppercase sm:text-xs">
         {titulo}
       </p>
-      <p className="mt-1 font-serif text-xl text-neutral-800">{valor}</p>
+      <p className="mt-1 font-serif text-lg text-neutral-800 sm:text-xl">{valor}</p>
       <p className="mt-1 text-xs text-neutral-500">{pie}</p>
     </div>
   );
@@ -38,7 +45,7 @@ export default function IndicadoresCards({ resumen, clientas, stock }: Props) {
   const sinDato = resumen.cobradoPorMedio["Sin dato"];
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <Indicador
         titulo="Ticket promedio"
         valor={formatearPrecio(clientas.ticketPromedio)}
@@ -51,6 +58,7 @@ export default function IndicadoresCards({ resumen, clientas, stock }: Props) {
       />
       <Indicador
         titulo="Cobrado por medio"
+        ancho
         valor={
           <span className="flex flex-col text-base">
             <span>Transferencia {formatearPrecio(Transferencia)}</span>
@@ -67,6 +75,7 @@ export default function IndicadoresCards({ resumen, clientas, stock }: Props) {
       />
       <Indicador
         titulo="Valor del stock"
+        ancho
         valor={formatearPrecio(stock.alCosto)}
         pie={
           <>
