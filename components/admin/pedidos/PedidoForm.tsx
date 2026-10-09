@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { Clienta, EstadoPedido, Producto } from "@/lib/types";
 import { ESTADOS_PEDIDO } from "@/lib/types";
 import { crearPedido, type PedidoItemNuevo } from "@/lib/db-gestion";
+import { nombreConTono, tonoUnico } from "@/lib/gestion";
 import { fechaHoy } from "@/lib/finanzas";
 import { formatearPrecio } from "@/lib/catalog";
 
@@ -55,7 +56,9 @@ export default function PedidoForm({
           ? {
               ...l,
               producto_id: p?.id ?? null,
-              nombre: p?.nombre ?? "",
+              // Con el tono: al convertir el pedido en venta, este nombre es
+              // el que queda en la venta.
+              nombre: p ? nombreConTono(p) : "",
               precio_estimado: p?.precio ?? 0,
             }
           : l
@@ -195,6 +198,7 @@ export default function PedidoForm({
                     <option key={p.id} value={p.id}>
                       {p.marca ? `${p.marca} · ` : ""}
                       {p.nombre}
+                      {tonoUnico(p) ? ` (${tonoUnico(p)})` : ""}
                     </option>
                   ))}
                 </select>

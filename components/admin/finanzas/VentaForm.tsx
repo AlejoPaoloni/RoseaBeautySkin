@@ -9,7 +9,12 @@ import {
   type ItemNuevo,
 } from "@/lib/db-finanzas";
 import { descontarStock } from "@/lib/db-gestion";
-import { diferenciaStock, productosParaVender, tonoUnico } from "@/lib/gestion";
+import {
+  diferenciaStock,
+  nombreConTono,
+  productosParaVender,
+  tonoUnico,
+} from "@/lib/gestion";
 import { fechaHoy } from "@/lib/finanzas";
 import { formatearPrecio } from "@/lib/catalog";
 
@@ -85,7 +90,7 @@ export default function VentaForm({
           ? {
               ...l,
               producto_id: p?.id ?? null,
-              nombre: p?.nombre ?? "",
+              nombre: p ? nombreConTono(p) : "",
               // Precio y costo se copian como snapshot: si mañana cambia la
               // lista de precios, esta venta sigue valiendo lo de hoy.
               precio_unitario: p?.precio ?? 0,

@@ -287,6 +287,14 @@ export function tonoUnico(producto: Producto): string | null {
   return producto.tonos?.length === 1 ? producto.tonos[0].nombre : null;
 }
 
+// Nombre que se guarda en el renglon de una venta o pedido. Lleva el tono
+// porque cada tono es un producto aparte: sin el, la lista de ventas y "Mas
+// vendidos" (que agrupa por este nombre) juntaban todos los tonos en uno.
+export function nombreConTono(producto: Producto): string {
+  const tono = tonoUnico(producto);
+  return tono ? `${producto.nombre} (${tono})` : producto.nombre;
+}
+
 // Lo que se puede elegir al cargar una venta: solo lo Disponible (no se
 // vende lo que no hay ni lo que es por encargo, que entra por Pedidos). Al
 // editar una venta, el producto que ya tiene el renglon se mantiene aunque

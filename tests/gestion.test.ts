@@ -8,6 +8,7 @@ import {
   coincide,
   diferenciaStock,
   estadoSegunStock,
+  nombreConTono,
   paraReponer,
   textoReposicion,
   esIdea,
@@ -585,5 +586,16 @@ describe("selector de producto al cargar una venta", () => {
     expect(tonoUnico(producto({ tonos: [{ nombre: "Fair Warm", hex: "#eee" }] }))).toBe("Fair Warm");
     expect(tonoUnico(producto({ tonos: null }))).toBeNull();
     expect(tonoUnico(producto({ tonos: [] }))).toBeNull();
+  });
+});
+
+describe("nombreConTono", () => {
+  it("suma el tono al nombre que se guarda en la venta", () => {
+    expect(
+      nombreConTono(producto({ nombre: "Camo Concealer", tonos: [{ nombre: "Fair Warm", hex: "#eee" }] }))
+    ).toBe("Camo Concealer (Fair Warm)");
+  });
+  it("sin tono queda el nombre solo", () => {
+    expect(nombreConTono(producto({ nombre: "Glazing Milk", tonos: null }))).toBe("Glazing Milk");
   });
 });
