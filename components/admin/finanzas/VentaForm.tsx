@@ -9,7 +9,7 @@ import {
   type ItemNuevo,
 } from "@/lib/db-finanzas";
 import { descontarStock } from "@/lib/db-gestion";
-import { diferenciaStock } from "@/lib/gestion";
+import { diferenciaStock, productosParaVender, tonoUnico } from "@/lib/gestion";
 import { fechaHoy } from "@/lib/finanzas";
 import { formatearPrecio } from "@/lib/catalog";
 
@@ -264,10 +264,14 @@ export default function VentaForm({
                       ? `${l.nombre} (ya no está en el catálogo)`
                       : "Elegí un producto…"}
                   </option>
-                  {productos.map((p) => (
+                  {productosParaVender(productos, l.producto_id).map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.marca ? `${p.marca} · ` : ""}
                       {p.nombre}
+                      {/* Cada tono es un producto aparte: sin el, tres
+                          "Hydrating Camo Concealer" no se distinguen. */}
+                      {tonoUnico(p) ? ` (${tonoUnico(p)})` : ""}
+                      {p.estado !== "Disponible" ? ` — ${p.estado}` : ""}
                     </option>
                   ))}
                 </select>

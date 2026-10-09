@@ -17,12 +17,14 @@ import {
   pedidosAbiertos,
   pedidosParaEntregar,
   proximasPublicaciones,
+  productosParaVender,
   productosStockBajo,
   valorStock,
   progresoChecklist,
   saldoPedido,
   stockBajo,
   tareaVencida,
+  tonoUnico,
   tareasUrgentes,
   totalPedido,
 } from "@/lib/gestion";
@@ -559,5 +561,29 @@ describe("pantalla de inicio", () => {
       HOY
     );
     expect(r.map((p) => p.id)).toEqual(["atrasada", "hoy", "en-una-semana"]);
+  });
+});
+
+describe("selector de producto al cargar una venta", () => {
+  const disponible = producto({ estado: "Disponible" });
+  const agotado = producto({ estado: "Sin stock" });
+  const encargo = producto({ estado: "Por Encargo" });
+
+  it("venta nueva: solo los Disponibles", () => {
+    expect(productosParaVender([disponible, agotado, encargo], null)).toEqual([disponible]);
+  });
+
+  it("al editar, el producto del renglon sigue en la lista aunque ya no este Disponible", () => {
+    // Caso real: esa misma venta lo dejo en 0 y paso a Sin stock.
+    expect(productosParaVender([disponible, agotado, encargo], agotado.id)).toEqual([
+      disponible,
+      agotado,
+    ]);
+  });
+
+  it("tonoUnico: el tono cuando hay exactamente uno", () => {
+    expect(tonoUnico(producto({ tonos: [{ nombre: "Fair Warm", hex: "#eee" }] }))).toBe("Fair Warm");
+    expect(tonoUnico(producto({ tonos: null }))).toBeNull();
+    expect(tonoUnico(producto({ tonos: [] }))).toBeNull();
   });
 });

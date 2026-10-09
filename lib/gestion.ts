@@ -283,8 +283,26 @@ export function paraReponer(
 // Nombre completo para pedirle al proveedor. Cada tono es un producto
 // aparte con un solo tono cargado: sin el, tres "Hydrating Camo Concealer"
 // en la lista no se distinguen.
+export function tonoUnico(producto: Producto): string | null {
+  return producto.tonos?.length === 1 ? producto.tonos[0].nombre : null;
+}
+
+// Lo que se puede elegir al cargar una venta: solo lo Disponible (no se
+// vende lo que no hay ni lo que es por encargo, que entra por Pedidos). Al
+// editar una venta, el producto que ya tiene el renglon se mantiene aunque
+// haya dejado de estar Disponible — tipicamente porque esa misma venta lo
+// dejo en 0 —; si no, el selector quedaria mostrando otro producto.
+export function productosParaVender(
+  productos: Producto[],
+  seleccionadoId: string | null
+): Producto[] {
+  return productos.filter(
+    (p) => p.estado === "Disponible" || p.id === seleccionadoId
+  );
+}
+
 export function nombreParaPedir(producto: Producto): string {
-  const tono = producto.tonos?.length === 1 ? producto.tonos[0].nombre : null;
+  const tono = tonoUnico(producto);
   return [producto.marca, producto.nombre].filter(Boolean).join(" ") +
     (tono ? ` (${tono})` : "");
 }
